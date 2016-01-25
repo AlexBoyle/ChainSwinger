@@ -21,7 +21,7 @@ public class PlayerControlScript : MonoBehaviour {
 	Vector3 prevPosition;
 	float SwingRadius;
 	public LineRenderer LR;
-	SpriteRenderer SR;
+	//SpriteRenderer SR;
 	//ObjectPoolScript SwingEffectPool;
 
 	PlayerIndex playerIndex;
@@ -32,7 +32,7 @@ public class PlayerControlScript : MonoBehaviour {
 		groundMask = 1 << 8;
 		playerGroundMask = 1 << 9; // maybe nine maybe just a number
 		playerIndex = (PlayerIndex)playerNumber;
-		SR = GetComponent<SpriteRenderer> ();
+		//SR = GetComponent<SpriteRenderer> ();
 		SS = GameObject.Find ("ScoreObject").GetComponent<ScoreScript>();
 		//SwingEffectPool = GameObject.Find ("LinePooler").GetComponent<ObjectPoolScript> ();
 	}
