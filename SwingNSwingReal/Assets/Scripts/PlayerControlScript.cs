@@ -50,22 +50,44 @@ public class PlayerControlScript : MonoBehaviour {
 
 
 	// Network sync 
+	// this function runs similar to update to try to keep track of syncronization.
+	private float lastSynchronizationTime = 0f;
+	private float syncDelay = 0f;
+	private float syncTime = 0f;
+	private Vector3 syncStartPosition = Vector3.zero;
+	private Vector3 syncEndPosition = Vector3.zero;
 
 	void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo info)
 	{
 		Vector3 syncPosition = Vector3.zero;
+		Vector3 syncVelocity = Vector3.zero;
 		if (stream.isWriting)
 		{
 			syncPosition = RB.position;
 			stream.Serialize (ref syncPosition);
+
+			syncVelocity = RB.velocity;
+			stream.Serialize (ref syncVelocity);
 		}
 		else
 		{
 			stream.Serialize (ref syncPosition);
-			RB.position = syncPosition;
+			stream.Serialize (ref syncVelocity);
+
+			syncTime = 0f;
+			syncDelay = Time.time - lastSynchronizationTime;
+			lastSynchronizationTime = Time.time;
+
+			syncEndPosition = syncPosition + syncVelocity * syncDelay;
+			syncStartPosition = RB.position;
 		}
 	}
 
+	//if ismine is false then run this function. 
+	private void SyncedMovement(){
+		syncTime += Time.deltaTime;
+		RB.position = Vector3.Lerp (syncStartPosition, syncEndPosition, syncTime / syncDelay);
+	}
 
 	// Update is called once per frame
 	void FixedUpdate () {
@@ -234,6 +256,9 @@ public class PlayerControlScript : MonoBehaviour {
 				
 			
 			prevPosition = transform.position;
+		} 
+		else {
+			SyncedMovement ();
 		}
 	}
 
