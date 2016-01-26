@@ -47,7 +47,26 @@ public class PlayerControlScript : MonoBehaviour {
 		canAttack = true;
 		swingEnabled = true;
 	}
-	
+
+
+	// Network sync 
+
+	void OnSerializeNetworkView(BitStream stream, NetworkMessageInfo info)
+	{
+		Vector3 syncPosition = Vector3.zero;
+		if (stream.isWriting)
+		{
+			syncPosition = RB.position;
+			stream.Serialize (ref syncPosition);
+		}
+		else
+		{
+			stream.Serialize (ref syncPosition);
+			RB.position = syncPosition;
+		}
+	}
+
+
 	// Update is called once per frame
 	void FixedUpdate () {
 		NetworkView nView = GetComponent<NetworkView> ();
