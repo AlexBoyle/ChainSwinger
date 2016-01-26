@@ -50,151 +50,152 @@ public class PlayerControlScript : MonoBehaviour {
 	
 	// Update is called once per frame
 	void FixedUpdate () {
+		NetworkView nView = GetComponent<NetworkView> ();
+		if (nView.isMine) {
+			prevState = state;
+			state = GamePad.GetState (playerIndex, GamePadDeadZone.None);
 
-		prevState = state;
-		state = GamePad.GetState(playerIndex, GamePadDeadZone.None);
-
-		// block for checking ground
-		if (!grounded) {
-			// do a check for ground
-			RaycastHit2D groundCheck = Physics2D.Raycast (transform.position, Vector2.down, .35f, groundMask);
-			if (groundCheck.collider != null && groundedBuffer <= 0) {
-				grounded = true;
-				doubleJump = true;
-				dash = true;
-			} else if (groundedBuffer > 0) {
-				groundedBuffer--;
-			}
-
-			// do a check for a wall hang
-			RaycastHit2D wallCheckRight = Physics2D.Raycast (transform.position, Vector2.right, .35f, groundMask);
-			RaycastHit2D wallCheckLeft	= Physics2D.Raycast (transform.position, Vector2.left, .35f, groundMask);
-			if (wallCheckRight.collider != null && wallBuffer <= 0) {
-				onWallRight = true;
-				doubleJump = true;
-				if (swinging) {
-					BreakLine ();
+			// block for checking ground
+			if (!grounded) {
+				// do a check for ground
+				RaycastHit2D groundCheck = Physics2D.Raycast (transform.position, Vector2.down, .35f, groundMask);
+				if (groundCheck.collider != null && groundedBuffer <= 0) {
+					grounded = true;
+					doubleJump = true;
+					dash = true;
+				} else if (groundedBuffer > 0) {
+					groundedBuffer--;
 				}
-			} else if (wallCheckLeft.collider != null && wallBuffer <= 0) {				 
-				onWallLeft = true;
-				doubleJump = true;
-				if (swinging) {
-					BreakLine ();
+
+				// do a check for a wall hang
+				RaycastHit2D wallCheckRight = Physics2D.Raycast (transform.position, Vector2.right, .35f, groundMask);
+				RaycastHit2D wallCheckLeft	= Physics2D.Raycast (transform.position, Vector2.left, .35f, groundMask);
+				if (wallCheckRight.collider != null && wallBuffer <= 0) {
+					onWallRight = true;
+					doubleJump = true;
+					if (swinging) {
+						BreakLine ();
+					}
+				} else if (wallCheckLeft.collider != null && wallBuffer <= 0) {				 
+					onWallLeft = true;
+					doubleJump = true;
+					if (swinging) {
+						BreakLine ();
+					}
+				} else if (wallBuffer > 0) {
+					wallBuffer--;
+				} else if (wallCheckLeft.collider == null && wallCheckRight.collider == null && (onWallLeft || onWallRight)) {
+					onWallLeft = false;
+					onWallRight = false;
 				}
-			} else if (wallBuffer > 0) {
-				wallBuffer--;
-			} else if (wallCheckLeft.collider == null && wallCheckRight.collider == null && (onWallLeft || onWallRight)) {
-				onWallLeft = false;
-				onWallRight = false;
-			}
-		} else {
-			onWallRight = false;
-			onWallLeft = false;
-		}
-
-
-		if (inputEnabled) {
-			// axis crontrols for horizontal movement
-			if (Mathf.Abs (state.ThumbSticks.Left.X) > deadSize && !onWallRight && !onWallLeft && leftRightEnabled) {
-				xStick = state.ThumbSticks.Left.X;
-			} else if (grounded) {
-				xStick = 0;
 			} else {
-				xStick = RB.velocity.x / groundSpeed;
-			}
-
-			if (xStick > 0) {
-				facingRight = true;
-			} else if (xStick < 0) {
-				facingRight = false;
-			}
-
-			if (((RB.velocity.x <=  xStick * groundSpeed) && (xStick > 0) || (RB.velocity.x >=  xStick * groundSpeed) && (xStick < 0) ) || grounded) {
-				RB.velocity = new Vector3 (xStick * groundSpeed, RB.velocity.y, 0);
+				onWallRight = false;
+				onWallLeft = false;
 			}
 
 
-			// jump button
-			if (state.Buttons.A == ButtonState.Pressed && prevState.Buttons.A != ButtonState.Pressed) {
-				// check if grounded
-				if (grounded) {
-					RB.velocity = new Vector2 (RB.velocity.x, 0);
-					RB.AddForce (new Vector2 (0, jumpHeight));
-					grounded = false;
-					groundedBuffer = 1;
-					wallBuffer = 10;
-				} else if (onWallLeft || onWallRight) {
-					WallJump ();
-				} else if (doubleJump) {
-					BreakLine ();
-					RB.velocity = new Vector2 (RB.velocity.x, 0);
-					RB.AddForce (new Vector2 (0, jumpHeight));
-					doubleJump = false;
-				}
-			}
-
-			if (onWallLeft || onWallRight) {
-				RB.velocity = new Vector2 (0f, -.75f);
-			}
-
-			// aiming button controls
-			if (state.Triggers.Left > .5f) {    //  && Controller){
-
-			}
-
-			// input for shooting primary
-			if (state.Triggers.Right > .5f) {
-
-			}
-			// input for  swinging
-			if (prevState.Triggers.Right <= .5f && state.Triggers.Right > .5f && !onWallLeft && !onWallRight && !grounded && swingEnabled) {
-				if (facingRight) {
-					grappleDirection = new Vector2 (1, 1);
+			if (inputEnabled) {
+				// axis crontrols for horizontal movement
+				if (Mathf.Abs (state.ThumbSticks.Left.X) > deadSize && !onWallRight && !onWallLeft && leftRightEnabled) {
+					xStick = state.ThumbSticks.Left.X;
+				} else if (grounded) {
+					xStick = 0;
 				} else {
-					grappleDirection = new Vector2 (-1, 1);
+					xStick = RB.velocity.x / groundSpeed;
 				}
 
-				RaycastHit2D swingHit = Physics2D.Raycast (transform.position, grappleDirection, Mathf.Infinity, groundMask);
-				swingPoint = swingHit.point;
-				SwingRadius = swingHit.distance;
-				grappleAnchor.transform.position = swingPoint;
-				grappleAnchor.SetActive (true);
-				LR.enabled = true;
-				ChainHixbox.SetActive (true);
-				StartCoroutine (SwingingCooldown());
-				swinging = true;
-				leftRightEnabled = false;
-			}
-			// input for releasing swing
-			if (prevState.Triggers.Right > .5f && state.Triggers.Right <= .5f) {
-				BreakLine ();
-			}
-			// inptut for secondary released
-			if (state.Buttons.RightShoulder == ButtonState.Released && prevState.Buttons.RightShoulder == ButtonState.Pressed) {
+				if (xStick > 0) {
+					facingRight = true;
+				} else if (xStick < 0) {
+					facingRight = false;
+				}
 
-			}
-			// input for shooting secondary
-			if (state.Buttons.RightShoulder == ButtonState.Pressed) {
-			}
-			// menu control
-			if (state.Buttons.Start == ButtonState.Pressed && prevState.Buttons.Start == ButtonState.Released && Time.timeScale == 1) {
-			
+				if (((RB.velocity.x <= xStick * groundSpeed) && (xStick > 0) || (RB.velocity.x >= xStick * groundSpeed) && (xStick < 0)) || grounded) {
+					RB.velocity = new Vector3 (xStick * groundSpeed, RB.velocity.y, 0);
+				}
+
+
+				// jump button
+				if (state.Buttons.A == ButtonState.Pressed && prevState.Buttons.A != ButtonState.Pressed) {
+					// check if grounded
+					if (grounded) {
+						RB.velocity = new Vector2 (RB.velocity.x, 0);
+						RB.AddForce (new Vector2 (0, jumpHeight));
+						grounded = false;
+						groundedBuffer = 1;
+						wallBuffer = 10;
+					} else if (onWallLeft || onWallRight) {
+						WallJump ();
+					} else if (doubleJump) {
+						BreakLine ();
+						RB.velocity = new Vector2 (RB.velocity.x, 0);
+						RB.AddForce (new Vector2 (0, jumpHeight));
+						doubleJump = false;
+					}
+				}
+
+				if (onWallLeft || onWallRight) {
+					RB.velocity = new Vector2 (0f, -.75f);
+				}
+
+				// aiming button controls
+				if (state.Triggers.Left > .5f) {    //  && Controller){
+
+				}
+
+				// input for shooting primary
+				if (state.Triggers.Right > .5f) {
+
+				}
+				// input for  swinging
+				if (prevState.Triggers.Right <= .5f && state.Triggers.Right > .5f && !onWallLeft && !onWallRight && !grounded && swingEnabled) {
+					if (facingRight) {
+						grappleDirection = new Vector2 (1, 1);
+					} else {
+						grappleDirection = new Vector2 (-1, 1);
+					}
+
+					RaycastHit2D swingHit = Physics2D.Raycast (transform.position, grappleDirection, Mathf.Infinity, groundMask);
+					swingPoint = swingHit.point;
+					SwingRadius = swingHit.distance;
+					grappleAnchor.transform.position = swingPoint;
+					grappleAnchor.SetActive (true);
+					LR.enabled = true;
+					ChainHixbox.SetActive (true);
+					StartCoroutine (SwingingCooldown ());
+					swinging = true;
+					leftRightEnabled = false;
+				}
+				// input for releasing swing
+				if (prevState.Triggers.Right > .5f && state.Triggers.Right <= .5f) {
+					BreakLine ();
+				}
+				// inptut for secondary released
+				if (state.Buttons.RightShoulder == ButtonState.Released && prevState.Buttons.RightShoulder == ButtonState.Pressed) {
+
+				}
+				// input for shooting secondary
+				if (state.Buttons.RightShoulder == ButtonState.Pressed) {
+				}
+				// menu control
+				if (state.Buttons.Start == ButtonState.Pressed && prevState.Buttons.Start == ButtonState.Released && Time.timeScale == 1) {
 				
-			}
+					
+				}
 
-			// x button for swinging
-			if (state.Buttons.X == ButtonState.Pressed && prevState.Buttons.X == ButtonState.Released && dash && canAttack) {
-				
-				StartCoroutine (CircleAttack ());
+				// x button for swinging
+				if (state.Buttons.X == ButtonState.Pressed && prevState.Buttons.X == ButtonState.Released && dash && canAttack) {
+					
+					StartCoroutine (CircleAttack ());
 
-				// old call for dash attack
-				//StartCoroutine (DashAttack(state.ThumbSticks.Left.X, state.ThumbSticks.Left.Y));
+					// old call for dash attack
+					//StartCoroutine (DashAttack(state.ThumbSticks.Left.X, state.ThumbSticks.Left.Y));
 
+				}
+				if (prevState.Buttons.X == ButtonState.Pressed && state.Buttons.X == ButtonState.Released) {
+					
+				}
 			}
-			if (prevState.Buttons.X == ButtonState.Pressed && state.Buttons.X == ButtonState.Released) {
-				
-			}
-		}
 			// change up velocity based on swinging state
 			if (swinging) {
 				CheckLineBreaks ();
@@ -206,14 +207,15 @@ public class PlayerControlScript : MonoBehaviour {
 
 				LineGraphicsUpdate ();
 				if (Vector2.Distance (transform.position, swingPoint) > SwingRadius) {
-					
+						
 					transform.position = Vector2.MoveTowards (transform.position, swingPoint, Vector2.Distance (transform.position, swingPoint) - SwingRadius);
-					RB.velocity =  (transform.position - prevPosition)/Time.deltaTime;
+					RB.velocity = (transform.position - prevPosition) / Time.deltaTime;
 				}
 			}
+				
 			
-		
-		prevPosition = transform.position;
+			prevPosition = transform.position;
+		}
 	}
 
 	void WallJump(){

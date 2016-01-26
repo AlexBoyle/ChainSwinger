@@ -5,17 +5,30 @@ public class RespawnScript : MonoBehaviour {
 
 	public GameObject playerPrefab;
 	public GameObject[] players;
+
 	// Use this for initialization
 	void Start () {
-		InitialSpawn (0);
-		InitialSpawn (1);
+		//InitialSpawn (0);
+		//InitialSpawn (1);
 	}
-	
+
+	/// <summary>
+	/// ////////////////////
+	/// </summary>
+	public void SpawnPlayer()
+	{
+		Network.Instantiate(playerPrefab, new Vector3(-2, 0, 0), Quaternion.identity, 0);
+	}
+
+	/// <summary>
+	/// //////////////////
+	/// </summary>
+
 	// Update is called once per frame
 	void Update () {
 	
 	}
-
+	//////////////////////////////////////////////////// dalts spawning
 	public void RespawnPlayer(float delay,int playerNum){
 		StartCoroutine (DelayRespawn(delay, playerNum));
 	}
@@ -41,4 +54,5 @@ public class RespawnScript : MonoBehaviour {
 
 
 	}
+	/////////////////////////////////////
 }
