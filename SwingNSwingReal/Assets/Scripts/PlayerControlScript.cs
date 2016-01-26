@@ -51,6 +51,7 @@ public class PlayerControlScript : MonoBehaviour {
 
 	// Network sync 
 	// this function runs similar to update to try to keep track of syncronization.
+
 	private float lastSynchronizationTime = 0f;
 	private float syncDelay = 0f;
 	private float syncTime = 0f;
