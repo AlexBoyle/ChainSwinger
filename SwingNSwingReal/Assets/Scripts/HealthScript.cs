@@ -5,10 +5,13 @@ public class HealthScript : MonoBehaviour {
 	public int health;
 	RespawnScript RS;
 	PlayerControlScript PCS;
+	public BloodScript BS;
+	ScoreScript SS;
 	// Use this for initialization
 	void Start () {
 		RS = GameObject.Find ("RespawnObject").GetComponent<RespawnScript>();
 		PCS = GetComponent<PlayerControlScript> ();
+		SS = GameObject.Find ("ScoreObject").GetComponent<ScoreScript>();
 	}
 	
 	// Update is called once per frame
@@ -17,8 +20,11 @@ public class HealthScript : MonoBehaviour {
 	}
 	void CheckIfKilled(){
 		if (health <= 0) {
-			transform.parent.gameObject.SetActive (false);
-			RS.RespawnPlayer (2f,PCS.GetPlayerNumber ());
+			transform.gameObject.SetActive (false);
+			BS.transform.position = transform.position;
+			BS.ShootBlood (50);
+			SS.IncrementKill (PCS.GetPlayerNumber ());
+			RS.RespawnPlayer (3f,PCS.GetPlayerNumber ());
 		}
 	}
 	public void DealDamage (int amount){
@@ -28,4 +34,5 @@ public class HealthScript : MonoBehaviour {
 	public void FillHealth(int amount){
 		health = amount;
 	}
+	
 }

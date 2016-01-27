@@ -13,7 +13,7 @@ public class ChainDestructionScript : MonoBehaviour {
 	void Update () {
 	
 	}
-	public void DestroyChain(){
-		PCS.BreakLine ();
+	public void DestroyChain(Vector3 cutPosition ){
+		PCS.BreakLine (true, cutPosition);
 	}
 }

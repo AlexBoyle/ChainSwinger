@@ -21,10 +21,15 @@ public class RespawnScript : MonoBehaviour {
 	}
 
 	IEnumerator DelayRespawn(float delay, int playerNum){
+		GameObject ghost = players [playerNum].transform.FindChild ("Ghost").gameObject;
+		GameObject player = players [playerNum].transform.FindChild ("Player").gameObject;
+		ghost.transform.position = player.transform.position;
+		ghost.SetActive(true);
 		yield return new WaitForSeconds (delay);
-		players [playerNum].transform.FindChild("Player").transform.position = Vector3.zero;
+		player.transform.position = ghost.transform.position;
+		ghost.SetActive(false);
+		player.SetActive (true);
 		players [playerNum].GetComponentInChildren<HealthScript> ().FillHealth (100);
-		players [playerNum].SetActive (true);
 	}
 
 	void InitialSpawn(int playerNumber){
