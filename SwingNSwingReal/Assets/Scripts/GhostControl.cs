@@ -21,7 +21,6 @@ public class GhostControl : MonoBehaviour {
 	// Update is called once per frame
 	void FixedUpdate () {
 		if (inputEnabled){
-			Debug.Log ("hello");
 			prevState = state;
 			state = GamePad.GetState (playerIndex, GamePadDeadZone.None);
 			// axis crontrols for horizontal movement

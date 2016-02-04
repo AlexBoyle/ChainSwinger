@@ -69,8 +69,10 @@ public class SelfTurnOffScript : MonoBehaviour {
 		}
 
 		if (shrink) {
-			for (int x = 0; x < 100; x++) {
-				transform.localScale -= new Vector3 (.01f, .01f, .01f);
+			for (int x = 0; x < 50; x++) {
+				if (transform.localScale.x > 0 && transform.localScale.y > 0 && transform.localScale.z > 0) {
+					transform.localScale -= new Vector3 (.01f, .01f, .01f);
+				}
 				yield return null;
 			}
 		} else if (sinkIntoGround) {

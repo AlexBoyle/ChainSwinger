@@ -36,10 +36,10 @@ public class RespawnScript : MonoBehaviour {
 		GameObject tmp =  Instantiate (playerPrefab, Vector3.zero, Quaternion.identity) as GameObject;
 		if (playerNumber == 0) {
 			tmp.transform.position = new Vector3 (-4, 0, 0);
-			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.red;
+			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.blue;
 		} else {
 			tmp.transform.position = new Vector3 (4, 0, 0);
-			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.blue;
+			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.red;
 		}
 		tmp.GetComponentInChildren<PlayerControlScript> ().playerNumber = playerNumber;
 		players [playerNumber] = tmp;

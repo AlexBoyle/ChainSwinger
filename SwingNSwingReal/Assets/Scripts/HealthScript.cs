@@ -5,7 +5,7 @@ public class HealthScript : MonoBehaviour {
 	public int health;
 	RespawnScript RS;
 	PlayerControlScript PCS;
-	public BloodScript BS;
+	public ParticleEmitterScript BS;
 	ScoreScript SS;
 	// Use this for initialization
 	void Start () {
@@ -22,7 +22,7 @@ public class HealthScript : MonoBehaviour {
 		if (health <= 0) {
 			transform.gameObject.SetActive (false);
 			BS.transform.position = transform.position;
-			BS.ShootBlood (50);
+			BS.EmitParticles (50);
 			SS.IncrementKill (PCS.GetPlayerNumber ());
 			RS.RespawnPlayer (3f,PCS.GetPlayerNumber ());
 		}
