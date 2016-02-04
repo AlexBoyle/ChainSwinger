@@ -4,7 +4,7 @@ using System.Collections;
 // force obect to also have the object pool
 [RequireComponent (typeof (ObjectPoolScript))]
 public class ParticleEmitterScript : MonoBehaviour {
-	public ObjectPoolScript particlePool;
+	 ObjectPoolScript particlePool;
 
 	public bool onEnableShootParticles = false;
 	public bool loopParticles = false;
@@ -14,12 +14,12 @@ public class ParticleEmitterScript : MonoBehaviour {
 
 
 	public bool useRandomPosition;
-	public float locationXMin, locationXMax, locationYMin, locationYMax;
+	public Vector3 positionMin, positionMax;
 	
 
 	// force variables
 	public bool useForces = false;
-	public float forceRangeXMin, forceRangeXMax, forceRangeYMin, forceRangeYMax;
+	public Vector3 forceMin, forceMax;
 
 	// rotation variables
 	public bool useRandomRotation = false;
@@ -27,7 +27,7 @@ public class ParticleEmitterScript : MonoBehaviour {
 
 	// scale variables
 	public bool useRandomScale = false;
-	public float scaleRangeXMin, scaleRangeXMax, scaleRangeYMin, scaleRangeYMax;
+	public Vector3 scaleMin, scaleMax;
 
 	// color variables
 	public bool useRandomColor;
@@ -38,7 +38,7 @@ public class ParticleEmitterScript : MonoBehaviour {
 	public bool useInitialBurst = false;
 	public int initialBurstAmount = 0;
 	// Use this for initialization
-	void Start () {
+	void Awake () {
 		particlePool=  GetComponent<ObjectPoolScript> ();
 	}
 	
@@ -54,13 +54,14 @@ public class ParticleEmitterScript : MonoBehaviour {
 			if (loopParticles) {
 				startParticlesLoop ();
 			} else {
-				EmitParticles (emitAmount);
+				EmitParticles (emitAmount, emitDuration);
 			}
 		}
 	}
-
+	//-------------------------Loop particle Functions ------------------------
 	// wrapper for a looped particle system
-	public void startParticlesLoop(int amount = -1){
+	public void startParticlesLoop(float amount = -1){
+		
 		// check for coded value and use emitamount as the new default
 		if (amount == -1) {
 			amount = emitAmount;
@@ -72,35 +73,51 @@ public class ParticleEmitterScript : MonoBehaviour {
 		}
 
 		// start up the particles
-		StartCoroutine ("loopedParticles", EmitOverTime (0));
+		StartCoroutine (EmitLoop (emitDuration/amount));
 	}
 	public void StopParticleLoop(){
-		StopCoroutine ("loopedParticles");
+		StopCoroutine ("EmitLoop");
+	}
+	// continuously emit particles
+	IEnumerator EmitLoop(float particlesPerSecond){		
+		while (true) {
+			EmitSingleParticle ();
+			yield return new WaitForSeconds(particlesPerSecond);
+		}
 	}
 
+	// ---------------------------regular emit functions ------------------------------
 	// wrapper function for emiting constant particles
-	public void EmitParticles(int amount, float duration = 0){
-		
-		StartCoroutine (EmitOverTime (amount));
+	public void EmitParticles(int amount, float duration = 1){
+		if (useInitialBurst) {
+			EmitBurst (initialBurstAmount);
+		}
+		StartCoroutine (EmitOverTime (amount, duration));
 	}
 
 	// emit amount of particles over time
-	IEnumerator EmitOverTime(int amount ){		
-		for (int x = 0; x < amount; x++) {
-			EmitSingleParticle ();
-			yield return null;
+	IEnumerator EmitOverTime(int amount, float duration){
+		int amountDec = amount;
+		float particlesPerFrame;
+		if (duration > 0) {
+			particlesPerFrame = (amount * .0166f) / duration;
+		} else {
+			particlesPerFrame = amount;
+		}
+
+		Debug.Log (particlesPerFrame);
+		while (amountDec > 0) {
+			for (int i = 0; i < particlesPerFrame; i++) {
+				EmitSingleParticle ();
+				amountDec--;
+			}
+			yield return new WaitForSeconds(duration/amount);
 		}
 	}
 
-	// continuously emit particles
-	IEnumerator EmitLoop(){		
-		while (true) {
-			EmitSingleParticle ();
-			yield return null;
-		}
-	}
+
 	// emites the passed in amount of particles as fast as possible
-	void EmitBurst(int amount){
+	public void EmitBurst(int amount){
 		for (int i = 0; i < amount; i++){
 			EmitSingleParticle ();
 		}
@@ -114,8 +131,8 @@ public class ParticleEmitterScript : MonoBehaviour {
 		// put particle on systems position or in a random area around it
 		if (useRandomPosition) {
 			Vector3 tmpPos =transform.position;
-			tmpPos.x += Random.Range (locationXMin, locationXMax);
-			tmpPos.y += Random.Range (locationYMin, locationYMax);
+			tmpPos.x += Random.Range (positionMin.x, positionMax.x);
+			tmpPos.y += Random.Range (positionMin.y, positionMax.y);
 			tmp.transform.position = tmpPos;
 		} else {					
 			tmp.transform.position = transform.position;
@@ -133,7 +150,7 @@ public class ParticleEmitterScript : MonoBehaviour {
 
 		// handle scale
 		if (useRandomScale) {
-			tmp.transform.localScale = new Vector3 (Random.Range (scaleRangeXMin, scaleRangeXMax), Random.Range (scaleRangeYMin, scaleRangeYMax), 1);
+			tmp.transform.localScale = new Vector3 (Random.Range (scaleMin.x, scaleMax.x), Random.Range (scaleMin.y, scaleMax.y), 1);
 		}
 
 		// set object active
@@ -141,10 +158,11 @@ public class ParticleEmitterScript : MonoBehaviour {
 
 		// handle particle forces
 		if (useForces) {
-			tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (forceRangeXMin, forceRangeXMax), Random.Range (forceRangeYMin, forceRangeYMax), 0);
+			tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (forceMin.x, forceMax.x), Random.Range (forceMin.y, forceMax.y), 0);
 		}
 	}
 
+	// ------------------- misc ---------------------
 	// uses rcolor1 and 2 and randoms a new color betweent them
 	Color RandomBetweenTwoColors(){
 		Color randomColor;

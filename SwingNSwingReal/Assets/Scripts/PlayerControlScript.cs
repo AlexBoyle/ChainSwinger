@@ -276,7 +276,7 @@ public class PlayerControlScript : MonoBehaviour {
 		}
 	}
 
-	void AnimateLineBreak( bool usePosition = false, Vector3 cutPosition = default(Vector3)){
+	void AnimateLineBreak( bool usePosition = false, Vector3 cutPosition = default(Vector3), Vector3 newPosition = default(Vector3)){
 		if (chainAnimAllowed) {
 			chainAnimAllowed = false;
 			float x = 0;
@@ -288,8 +288,11 @@ public class PlayerControlScript : MonoBehaviour {
 			if (usePosition) {
 				cutPoint = Vector3.Distance (swingPoint, cutPosition);
 			}
-
-			while (x < Vector2.Distance (transform.position, swingPoint)) {
+			float lineLength = Vector2.Distance (transform.position, swingPoint);
+			if (newPosition != Vector3.zero){
+				lineLength -= Vector2.Distance (transform.position, newPosition);
+			}
+			while (x < lineLength) {
 			
 				GameObject tmp = chainLinkPool.FetchObject ();
 				tmp.transform.position = Vector3.MoveTowards (swingPoint, transform.position, x);
@@ -335,7 +338,7 @@ public class PlayerControlScript : MonoBehaviour {
 		Vector2 dir =  new Vector3(swingPoint.x, swingPoint.y, 1) - transform.position;
 		RaycastHit2D hit = Physics2D.Raycast (transform.position, dir, Mathf.Infinity, groundMask);
 		if (hit.point != swingPoint) {
-			AnimateLineBreak ();
+			AnimateLineBreak (false, Vector3.zero, hit.point);
 			swingPoint = hit.point;
 			SwingRadius = hit.distance;
 			grappleAnchor.transform.position = swingPoint;
