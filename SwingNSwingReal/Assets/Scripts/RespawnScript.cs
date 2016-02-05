@@ -5,8 +5,10 @@ public class RespawnScript : MonoBehaviour {
 
 	public GameObject playerPrefab;
 	public GameObject[] players;
+	CameraFollowScript CFS;
 	// Use this for initialization
 	void Start () {
+		CFS = GameObject.Find ("Main Camera").GetComponent<CameraFollowScript> ();
 		InitialSpawn (0);
 		InitialSpawn (1);
 	}
@@ -27,6 +29,7 @@ public class RespawnScript : MonoBehaviour {
 		ghost.SetActive(true);
 		yield return new WaitForSeconds (delay);
 		player.transform.position = ghost.transform.position;
+		ghost.GetComponent<ParticleEmitterScript> ().EmitBurst (75);
 		ghost.SetActive(false);
 		player.SetActive (true);
 		players [playerNum].GetComponentInChildren<HealthScript> ().FillHealth (100);
@@ -43,6 +46,7 @@ public class RespawnScript : MonoBehaviour {
 		}
 		tmp.GetComponentInChildren<PlayerControlScript> ().playerNumber = playerNumber;
 		players [playerNumber] = tmp;
+		CFS.addPlayer (tmp.transform.GetChild(0).transform, playerNumber);
 
 
 	}
