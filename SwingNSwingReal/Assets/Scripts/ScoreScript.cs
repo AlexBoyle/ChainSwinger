@@ -48,7 +48,7 @@ public class ScoreScript : MonoBehaviour {
 		}
 	}
 	void ReloadLevel(){
-		UnityEngine.SceneManagement.SceneManager.LoadScene (UnityEngine.SceneManagement.SceneManager.GetActiveScene ().buildIndex);
+		//UnityEngine.SceneManagement.SceneManager.LoadScene (UnityEngine.SceneManagement.SceneManager.GetActiveScene ().buildIndex);
 	}
 	IEnumerator LerpBar(){
 		while (scoreBar[0].fillAmount  < playerKills[0]/killsToWin || scoreBar[1].fillAmount  < playerKills[1]/killsToWin || scoreBar[2].fillAmount  < playerKills[2]/killsToWin || scoreBar[3].fillAmount  < playerKills[3]/killsToWin){
