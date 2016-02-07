@@ -1,14 +1,22 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+// script use
+// bounds the camera to be locked within the range specified by the top left right and bottom bound variables
+// also lerpes the camera size to always show the two players that are taken in
+
 public class CameraFollowScript : MonoBehaviour {
 	Camera mainCamera;
 	public Transform[] players;
 	float cameraToUnits = 1.778114f;
-	float lerpFactor = .2f;
-	public float LeftBound;
-	public float RightBound;
-	public float BottomBound;
+	float lerpFactor = .025f;
+
+	public float topBound;
+	public float leftBound;
+	public float rightBound;
+	public float bottomBound;
+	public float cameraMaxSize;
+	public float cameraMinSize;
 	// Use this for initialization
 	void Start () {
 		players = new Transform[4];
@@ -26,38 +34,46 @@ public class CameraFollowScript : MonoBehaviour {
 
 
 		// adjust camera to be big enough to show both players
-		float newSize = (5f / 12f) * currentDistance;
+		float newSize = ((cameraToUnits  * currentDistance)/2) + 2;
 		float yDistance = Mathf.Abs( players [0].position.y - players [1].position.y);
+
 		if (yDistance > newSize) {
 			newSize = yDistance +1;
 		}
 
-		if (newSize < 5f) {
-			newSize = 5f;
-		} else if (newSize > 8.5) {
-			newSize = 8.5f;
+		if (newSize < cameraMinSize) {
+			newSize = cameraMinSize;
+		} else if (newSize > cameraMaxSize) {
+			newSize = cameraMaxSize;
 		}
 		mainCamera.orthographicSize = Mathf.Lerp(mainCamera.orthographicSize ,newSize, lerpFactor);
 
 		// adjust camera to be in center of players
+
+		float cameraBoundUp = midpoint.y + newSize;
+		float cameraBoundDown = midpoint.y - newSize;
 		// stop camera from leaving the ground
-		if (midpoint.y < newSize) {
-			midpoint.y=  newSize - 5;
-		}
+		if (cameraBoundUp > topBound) {
+			midpoint.y = topBound - newSize;
+		} else if (cameraBoundDown < bottomBound) {
+			midpoint.y = bottomBound + newSize ;
+		} 
+
 
 		// control the x so that camera does show out of bounds
 		float cameraBoundRight = midpoint.x +  (cameraToUnits * newSize);
 		float cameraBoundLeft = midpoint.x -  (cameraToUnits * newSize);
-		if (newSize == 8.5f){
+		if (newSize == cameraMaxSize){
 			midpoint.x = 0;
+			midpoint.y = 3.5f;
 		}
-		else if ( cameraBoundRight >  15){
-			midpoint.x = 15f - (cameraToUnits*newSize); 
-		}else if (cameraBoundLeft < -15){
-			midpoint.x = -15 + (cameraToUnits*newSize);
+		else if ( cameraBoundRight >  rightBound){
+			midpoint.x = rightBound - (cameraToUnits*newSize); 
+		}else if (cameraBoundLeft < leftBound){
+			midpoint.x = leftBound + (cameraToUnits*newSize);
 		}  
 
-		mainCamera.transform.position =  Vector3.Lerp(mainCamera.transform.position, midpoint, lerpFactor );
+		mainCamera.transform.position = Vector3.Lerp(mainCamera.transform.position, midpoint, lerpFactor );
 	}
 	public void addPlayer(Transform newPlayer, int pNum){
 		players[pNum] = newPlayer;

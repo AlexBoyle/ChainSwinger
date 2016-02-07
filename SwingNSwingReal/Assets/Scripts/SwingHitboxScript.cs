@@ -3,6 +3,7 @@ using System.Collections;
 
 public class SwingHitboxScript : MonoBehaviour {
 	public GameObject Owner, ChainHitbox;
+	public bool isTip;
 	// Use this for initialization
 	void Start () {
 	
@@ -15,7 +16,7 @@ public class SwingHitboxScript : MonoBehaviour {
 
 	void OnTriggerEnter2D(Collider2D other){
 		if (other.tag == "Player" && other.gameObject != Owner) {
-			other.GetComponent<HealthScript> ().DealDamage (100);
+			other.GetComponent<HealthScript> ().DealDamage (100, isTip);
 		}else if(other.tag == "Chain" && other.gameObject != ChainHitbox){
 			other.GetComponent<ChainDestructionScript> ().DestroyChain (transform.position);
 

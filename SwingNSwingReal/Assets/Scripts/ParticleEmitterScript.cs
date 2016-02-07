@@ -88,15 +88,15 @@ public class ParticleEmitterScript : MonoBehaviour {
 
 	// ---------------------------regular emit functions ------------------------------
 	// wrapper function for emiting constant particles
-	public void EmitParticles(int amount, float duration = 1){
+	public void EmitParticles(int amount, float duration = 1, float forceRatio = 1,  float scaleRatio = 1){
 		if (useInitialBurst) {
 			EmitBurst (initialBurstAmount);
 		}
-		StartCoroutine (EmitOverTime (amount, duration));
+		StartCoroutine (EmitOverTime (amount, duration, forceRatio, scaleRatio));
 	}
 
 	// emit amount of particles over time
-	IEnumerator EmitOverTime(int amount, float duration){
+	IEnumerator EmitOverTime(int amount, float duration, float forceRatio = 1,  float scaleRatio = 1){
 		int amountDec = amount;
 		float particlesPerFrame;
 		if (duration > 0) {
@@ -108,7 +108,7 @@ public class ParticleEmitterScript : MonoBehaviour {
 		Debug.Log (particlesPerFrame);
 		while (amountDec > 0) {
 			for (int i = 0; i < particlesPerFrame; i++) {
-				EmitSingleParticle ();
+				EmitSingleParticle (forceRatio, scaleRatio);
 				amountDec--;
 			}
 			yield return new WaitForSeconds(duration/amount);
@@ -124,7 +124,7 @@ public class ParticleEmitterScript : MonoBehaviour {
 	}
 
 	// shoots out a single particle according to the paramters set in the class
-	void EmitSingleParticle(){
+	void EmitSingleParticle(float forceRatio = 1, float scaleRatio = 1){
 		// get particle from pool
 		GameObject tmp =  particlePool.FetchObject ();
 
@@ -150,7 +150,7 @@ public class ParticleEmitterScript : MonoBehaviour {
 
 		// handle scale
 		if (useRandomScale) {
-			tmp.transform.localScale = new Vector3 (Random.Range (scaleMin.x, scaleMax.x), Random.Range (scaleMin.y, scaleMax.y), 1);
+			tmp.transform.localScale = new Vector3 (Random.Range (scaleMin.x * scaleRatio, scaleMax.x * scaleRatio), Random.Range (scaleMin.y * scaleRatio, scaleMax.y * scaleRatio), 1);
 		}
 
 		// set object active
@@ -158,7 +158,7 @@ public class ParticleEmitterScript : MonoBehaviour {
 
 		// handle particle forces
 		if (useForces) {
-			tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (forceMin.x, forceMax.x), Random.Range (forceMin.y, forceMax.y), 0);
+			tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (forceMin.x * forceRatio, forceMax.x * forceRatio), Random.Range (forceMin.y * forceRatio, forceMax.y * forceRatio), 0);
 		}
 	}
 

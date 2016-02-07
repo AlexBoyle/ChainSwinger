@@ -121,7 +121,7 @@ public class PlayerControlScript : MonoBehaviour {
 				}
 
 				if (((RB.velocity.x <= xStick * groundSpeed) && (xStick > 0) || (RB.velocity.x >= xStick * groundSpeed) && (xStick < 0)) || grounded) {
-					RB.velocity = new Vector3 (xStick * groundSpeed, RB.velocity.y, 0);
+						RB.velocity = new Vector3 (xStick * groundSpeed, RB.velocity.y, 0);
 				}
 
 
@@ -158,8 +158,10 @@ public class PlayerControlScript : MonoBehaviour {
 
 				}
 				// input for  swinging
-				if (prevState.Triggers.Right <= .5f && state.Triggers.Right > .5f && !onWallLeft && !onWallRight && !grounded && swingEnabled) {
-					if (facingRight) {
+				if (prevState.Triggers.Right <= .5f && state.Triggers.Right > .5f && !onWallLeft && !onWallRight && swingEnabled) {
+					if (grounded) {
+						grappleDirection = new Vector2 (0,1);
+					}else if (facingRight) {
 						grappleDirection = new Vector2 (1, 1);
 					} else {
 						grappleDirection = new Vector2 (-1, 1);

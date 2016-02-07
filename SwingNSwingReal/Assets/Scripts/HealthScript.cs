@@ -18,18 +18,24 @@ public class HealthScript : MonoBehaviour {
 	void Update () {
 	
 	}
-	void CheckIfKilled(){
+	void CheckIfKilled(bool tipKill){
 		if (health <= 0) {
 			transform.gameObject.SetActive (false);
 			BS.transform.position = transform.position;
-			BS.EmitParticles (50);
+			// more elaborate effects for the tip kill
+			Debug.Log(tipKill);
+			if (tipKill) {
+				BS.EmitParticles (125, 1, 2f, 1.5f);
+			} else {
+				BS.EmitParticles (50);
+			}
 			SS.IncrementKill (PCS.GetPlayerNumber ());
 			RS.RespawnPlayer (3f,PCS.GetPlayerNumber ());
 		}
 	}
-	public void DealDamage (int amount){
+	public void DealDamage (int amount, bool tipKill){
 		health -= amount;
-		CheckIfKilled ();
+		CheckIfKilled (tipKill);
 	}
 	public void FillHealth(int amount){
 		health = amount;
