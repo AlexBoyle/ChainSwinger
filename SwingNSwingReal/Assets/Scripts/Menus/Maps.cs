@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 public class Maps : MonoBehaviour {
 
-	public int firstMapIndex = 0;
+	public int firstMapIndex = 1;
 	public GameObject player;
 	private int[] mapVotes;
 	public int rows = 2;
