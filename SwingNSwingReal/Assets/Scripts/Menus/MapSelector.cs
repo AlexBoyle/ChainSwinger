@@ -40,14 +40,14 @@ public class MapSelector : MonoBehaviour {
 				moveCoolDownVar = moveCoolDown;
 				//
 				if (state.ThumbSticks.Left.X > .4f) {
-					if (mapX - 1 > playerX)
+					if (mapX - 1 > playerX)//idk why this works now
 						playerX++;
 				} else if (state.ThumbSticks.Left.X < -.4f) {
 					if (0 < playerX)
 						playerX--;
 				}
 				if (state.ThumbSticks.Left.Y < -.4f) {
-					if (mapY - 1 > playerY)//idk this wokrs now
+					if (mapY - 1 > playerY)//idk why this works now
 					playerY++;
 				} else if (state.ThumbSticks.Left.Y > .4f) {
 					if (0 < playerY)
@@ -55,7 +55,7 @@ public class MapSelector : MonoBehaviour {
 				}
 			}
 		}
-		gameObject.GetComponent<Transform>().position = Vector3.Lerp(gameObject.GetComponent<Transform>().position, new Vector3((playerX * moveX)-10.8f +(playerNumber * .9f),(playerY * -moveY) + 1,0), .2f);
+		gameObject.GetComponent<Transform>().position = Vector3.Lerp(gameObject.GetComponent<Transform>().position, new Vector3((playerX * moveX)-7.4f +(playerNumber * .9f),(playerY * -moveY) + 1.5f,0), .2f);
 		gameObject.GetComponent<Transform>().Rotate(new Vector3(0,0,playerNumber + 2));
 		moveCoolDownVar--;
 	}

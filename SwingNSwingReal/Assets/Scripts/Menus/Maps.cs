@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 public class Maps : MonoBehaviour {
 
-	public int firstMapIndex = 1;
+
 	public GameObject player;
 	private int[] mapVotes;
 	public int rows = 2;
@@ -25,21 +25,23 @@ public class Maps : MonoBehaviour {
 		width = mapImages.Length/rows;
 		height = rows;
 		int j = -1;
-		//adds all the players in
-		for (int i = 0; i < numPlayers; i++) {
-			(Instantiate (player) as GameObject).GetComponent<MapSelector> ().setPlayerNum (i);
-		}
+
 		//displays every map
 		for (int i = 0; i < mapImages.Length; i++) {
 			if (i % width == 0)
 				j++;
-			Instantiate(mapImages[i],new Vector3(((i%width) * disX)-9, (j * -disY) +3, 0),Quaternion.identity);
+			Instantiate(mapImages[i],new Vector3(((i%width) * disX)-6, (j * -disY) +3, 0),Quaternion.identity);
+		}
+	}
+	public void addPlayers(int a){
+		numPlayers = a;
+		for (int i = 0; i < numPlayers; i++) {
+			(Instantiate (player) as GameObject).GetComponent<MapSelector> ().setPlayerNum (i);
 		}
 	}
 	//collects map voats and then picks the next level
 	public void selectMap(int selection)
 	{
-		
 		mapVotes [selection] ++;
 		votes++;
 		//the voting thing
@@ -62,10 +64,10 @@ public class Maps : MonoBehaviour {
 			Debug.Log (mapToPlay.Count);
 			//pick level
 			if (mapToPlay.Count <= 1) {
-				SceneManager.LoadScene(mapToPlay [0] + firstMapIndex);
+				SceneManager.LoadScene(mapToPlay [0] + SceneManager.GetActiveScene().buildIndex +1);
 			} else {
 				Random.seed = System.DateTime.Now.Millisecond;
-				SceneManager.LoadScene(mapToPlay[(int)(Random.value * 100) %mapToPlay.Count] + firstMapIndex);
+				SceneManager.LoadScene(mapToPlay[(int)(Random.value * 100) %mapToPlay.Count] + SceneManager.GetActiveScene().buildIndex + 1);
 			}
 		}
 	}
