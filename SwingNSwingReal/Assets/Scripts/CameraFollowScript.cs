@@ -8,8 +8,11 @@ using System.Collections;
 public class CameraFollowScript : MonoBehaviour {
 	Camera mainCamera;
 	public Transform[] players;
+	public Transform[] playerGhosts;
 	float cameraToUnits = 1.778114f;
 	float lerpFactor = .025f;
+
+	int numberOfPlayers = 0;
 
 	public float topBound;
 	public float leftBound;
@@ -20,22 +23,35 @@ public class CameraFollowScript : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		players = new Transform[4];
+		playerGhosts = new Transform[4];
 		mainCamera = GetComponent<Camera> ();
 	}
 	
 	// Update is called once per frame
 	void FixedUpdate () {
-		adjustCamera ();
+		if (numberOfPlayers == 2) {
+			adjustCamera ();
+		} else {
+			mainCamera.orthographicSize = cameraMaxSize;
+			mainCamera.transform.position = new Vector3 (0, 3.5f, -100);
+		}
 	}
 	void adjustCamera(){
-		float currentDistance = Vector3.Distance (players [0].position, players [1].position);
+		Vector3 p1Pos = players[0].position, p2Pos = players[1].position;
+		if (!players [0].gameObject.activeSelf) {
+			p1Pos = playerGhosts [0].position;
+		}
+		if (!players [1].gameObject.activeSelf) {
+			p1Pos = playerGhosts [1].position;
+		}
+		float currentDistance = Vector3.Distance (p1Pos, p2Pos);
 
-		Vector3 midpoint = new Vector3((players [0].position.x + players[1].position.x)/2, (players [0].position.y +  players[1].position.y)/2, -100 );
+		Vector3 midpoint = new Vector3((p1Pos.x + p2Pos.x)/2, (p1Pos.y +  p2Pos.y)/2, -100 );
 
 
 		// adjust camera to be big enough to show both players
 		float newSize = ((cameraToUnits  * currentDistance)/2) + 2;
-		float yDistance = Mathf.Abs( players [0].position.y - players [1].position.y);
+		float yDistance = Mathf.Abs( p1Pos.y - p2Pos.y);
 
 		if (yDistance > newSize) {
 			newSize = yDistance +1;
@@ -75,7 +91,9 @@ public class CameraFollowScript : MonoBehaviour {
 
 		mainCamera.transform.position = Vector3.Lerp(mainCamera.transform.position, midpoint, lerpFactor );
 	}
-	public void addPlayer(Transform newPlayer, int pNum){
+	public void addPlayer(Transform newPlayer, Transform newGhost,int pNum){
 		players[pNum] = newPlayer;
+		playerGhosts [pNum] = newGhost;
+		numberOfPlayers++;
 	}
 }

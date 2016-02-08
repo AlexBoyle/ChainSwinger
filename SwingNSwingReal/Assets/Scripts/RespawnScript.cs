@@ -1,21 +1,31 @@
 ﻿using UnityEngine;
 using System.Collections;
+using XInputDotNetPure; // Required in C#
 
 public class RespawnScript : MonoBehaviour {
 
 	public GameObject playerPrefab;
 	public GameObject[] players;
 	CameraFollowScript CFS;
+
+	PlayerIndex playerIndex;
+	GamePadState state;
+	GamePadState prevState;
 	// Use this for initialization
 	void Start () {
 		CFS = GameObject.Find ("Main Camera").GetComponent<CameraFollowScript> ();
-		InitialSpawn (0);
-		InitialSpawn (1);
+
 	}
 	
 	// Update is called once per frame
 	void Update () {
-	
+		for (int x = 0; x < 4; x++) {
+			state = GamePad.GetState ((PlayerIndex)x, GamePadDeadZone.None);
+
+			if (state.Buttons.Start == ButtonState.Pressed && players[x] == null) {
+				InitialSpawn (x);
+			}
+		}
 	}
 
 	public void RespawnPlayer(float delay,int playerNum){
@@ -37,16 +47,28 @@ public class RespawnScript : MonoBehaviour {
 
 	void InitialSpawn(int playerNumber){
 		GameObject tmp =  Instantiate (playerPrefab, Vector3.zero, Quaternion.identity) as GameObject;
-		if (playerNumber == 0) {
+		switch (playerNumber) {
+		case 0:
 			tmp.transform.position = new Vector3 (-4, 0, 0);
-			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.blue;
-		} else {
-			tmp.transform.position = new Vector3 (4, 0, 0);
 			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.red;
+			break;
+		case 1:
+			tmp.transform.position = new Vector3 (4, 0, 0);
+			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.blue;
+			break;
+		case 2:
+			tmp.transform.position = new Vector3 (-8, 0, 0);
+			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.yellow;
+			break;
+		case 3:
+			tmp.transform.position = new Vector3 (8, 0, 0);
+			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.green;
+			break;
 		}
+
 		tmp.GetComponentInChildren<PlayerControlScript> ().playerNumber = playerNumber;
 		players [playerNumber] = tmp;
-		CFS.addPlayer (tmp.transform.GetChild(0).transform, playerNumber);
+		CFS.addPlayer (tmp.transform.GetChild(0).transform, players [playerNumber].transform.FindChild ("Ghost").gameObject.transform, playerNumber);
 
 
 	}

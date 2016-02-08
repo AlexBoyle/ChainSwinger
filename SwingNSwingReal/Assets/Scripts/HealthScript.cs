@@ -18,7 +18,7 @@ public class HealthScript : MonoBehaviour {
 	void Update () {
 	
 	}
-	void CheckIfKilled(bool tipKill){
+	void CheckIfKilled(int killerPnum, bool tipKill){
 		if (health <= 0) {
 			transform.gameObject.SetActive (false);
 			BS.transform.position = transform.position;
@@ -29,13 +29,13 @@ public class HealthScript : MonoBehaviour {
 			} else {
 				BS.EmitParticles (50);
 			}
-			SS.IncrementKill (PCS.GetPlayerNumber ());
+			SS.IncrementKill (killerPnum);
 			RS.RespawnPlayer (3f,PCS.GetPlayerNumber ());
 		}
 	}
-	public void DealDamage (int amount, bool tipKill){
+	public void DealDamage (int amount, int killerPnum ,bool tipKill){
 		health -= amount;
-		CheckIfKilled (tipKill);
+		CheckIfKilled (killerPnum ,tipKill);
 	}
 	public void FillHealth(int amount){
 		health = amount;

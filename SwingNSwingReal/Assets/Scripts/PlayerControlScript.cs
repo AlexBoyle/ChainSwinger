@@ -6,12 +6,13 @@ public class PlayerControlScript : MonoBehaviour {
 
 	public Rigidbody2D RB;
 	public float groundSpeed, jumpHeight, DashSpeed;
-	public GameObject grappleAnchor, ChainHixbox;
-	public GameObject swingEffect;
+	public GameObject ghost, grappleAnchor, ChainHixbox, swingEffect;
+	public Rigidbody2D thrownSword;
 	public int playerNumber;
 	public bool BlockReelIn = false;
 	float xStick, yStick, deadSize = .25f;
-	bool inputEnabled = true, doubleJump = false, grounded = false, onWallRight = false, onWallLeft = false, leftRightEnabled = true, swinging = false, facingRight, dash = false, canAttack = true, swingEnabled = true, gameOver = false, chainAnimAllowed = true;
+	bool movementInputEnabled = true, doubleJump = false, grounded = false, onWallRight = false, onWallLeft = false, leftRightEnabled = true, swinging = false, facingRight, dash = false, 
+	canAttack = true, swingEnabled = true, gameOver = false, chainAnimAllowed = true, hasSword, isChargingThrow = false;
 	ScoreScript SS;
 	public Sprite[] SwordAnimations;
 
@@ -20,8 +21,8 @@ public class PlayerControlScript : MonoBehaviour {
 	int groundMask, playerGroundMask;
 	int groundedBuffer = 0, wallBuffer = 0;
 	Vector2 swingPoint, grappleDirection;
-	Vector3 prevPosition;
-	float SwingRadius;
+	Vector3 prevPosition, swordThrowAngle;
+	float SwingRadius, throwTimerStart;
 	public LineRenderer LR;
 	SpriteRenderer SR;
 	//ObjectPoolScript SwingEffectPool;
@@ -46,11 +47,13 @@ public class PlayerControlScript : MonoBehaviour {
 		onWallLeft = false;
 		onWallRight = false;
 		leftRightEnabled = true;
-		inputEnabled = true;
+		movementInputEnabled = true;
 		swinging = false;
 		canAttack = true;
 		swingEnabled = true;
 		chainAnimAllowed = true;
+		hasSword = true;
+		isChargingThrow = false;
 	}
 	
 	// Update is called once per frame
@@ -104,9 +107,9 @@ public class PlayerControlScript : MonoBehaviour {
 			}
 
 
-			if (inputEnabled) {
+			if (movementInputEnabled) {
 				// axis crontrols for horizontal movement
-				if (Mathf.Abs (state.ThumbSticks.Left.X) > deadSize && !onWallRight && !onWallLeft && leftRightEnabled) {
+				if (Mathf.Abs (state.ThumbSticks.Left.X) > deadSize && !onWallRight && !onWallLeft && leftRightEnabled && !isChargingThrow) {
 					xStick = state.ThumbSticks.Left.X;
 				} else if (grounded) {
 					xStick = 0;
@@ -126,9 +129,9 @@ public class PlayerControlScript : MonoBehaviour {
 
 
 				// jump button
-				if (state.Buttons.A == ButtonState.Pressed && prevState.Buttons.A != ButtonState.Pressed) {
+				if (state.Buttons.A == ButtonState.Pressed && prevState.Buttons.A != ButtonState.Pressed && !isChargingThrow) {
 					// check if grounded
-					if (grounded) {
+					if (grounded && !isChargingThrow) {
 						RB.velocity = new Vector2 (RB.velocity.x, 0);
 						RB.AddForce (new Vector2 (0, jumpHeight));
 						grounded = false;
@@ -148,66 +151,10 @@ public class PlayerControlScript : MonoBehaviour {
 					RB.velocity = new Vector2 (0f, -.75f);
 				}
 
-				// aiming button controls
-				if (state.Triggers.Left > .5f) {    //  && Controller){
 
-				}
-
-				// input for shooting primary
-				if (state.Triggers.Right > .5f) {
-
-				}
-				// input for  swinging
-				if (prevState.Triggers.Right <= .5f && state.Triggers.Right > .5f && !onWallLeft && !onWallRight && swingEnabled) {
-					if (grounded) {
-						grappleDirection = new Vector2 (0,1);
-					}else if (facingRight) {
-						grappleDirection = new Vector2 (1, 1);
-					} else {
-						grappleDirection = new Vector2 (-1, 1);
-					}
-
-					RaycastHit2D swingHit = Physics2D.Raycast (transform.position, grappleDirection, Mathf.Infinity, groundMask);
-					swingPoint = swingHit.point;
-					SwingRadius = swingHit.distance;
-					grappleAnchor.transform.position = swingPoint;
-					grappleAnchor.SetActive (true);
-					LR.enabled = true;
-					ChainHixbox.SetActive (true);
-					StartCoroutine (SwingingCooldown ());
-					swinging = true;
-					leftRightEnabled = false;
-				}
-				// input for releasing swing
-				if (prevState.Triggers.Right > .5f && state.Triggers.Right <= .5f) {
-					BreakLine ();
-				}
-				// inptut for secondary released
-				if (state.Buttons.RightShoulder == ButtonState.Released && prevState.Buttons.RightShoulder == ButtonState.Pressed) {
-
-				}
-				// input for shooting secondary
-				if (state.Buttons.RightShoulder == ButtonState.Pressed) {
-				}
-				// menu control
-				if (state.Buttons.Start == ButtonState.Pressed && prevState.Buttons.Start == ButtonState.Released && Time.timeScale == 1) {
-			
-				
-				}
-
-				// x button for swinging
-				if (state.Buttons.X == ButtonState.Pressed && prevState.Buttons.X == ButtonState.Released && dash && canAttack) {
-				
-					StartCoroutine (CircleAttack ());
-
-					// old call for dash attack
-					//StartCoroutine (DashAttack(state.ThumbSticks.Left.X, state.ThumbSticks.Left.Y));
-
-				}
-				if (prevState.Buttons.X == ButtonState.Pressed && state.Buttons.X == ButtonState.Released) {
-				
-				}
 			}
+
+			AttackControls ();
 			// change up velocity based on swinging state
 			if (swinging) {
 				CheckLineBreaks ();
@@ -227,6 +174,81 @@ public class PlayerControlScript : MonoBehaviour {
 			
 		
 			prevPosition = transform.position;
+		}
+	}
+
+	// ----------------- // section of controls for doing attacks and swinging chain \\ ----------------- \\
+	void AttackControls(){
+		// trigger press for starting the charge on throwing the sword
+		if (state.Triggers.Left > .5f && prevState.Triggers.Left <= .5f && hasSword) {    //  && Controller){
+
+			//throwTimerStart = Time.time;
+			//leftRightEnabled = false;
+			//isChargingThrow = true;
+		}
+		// aiming 
+		if (((Mathf.Abs (state.ThumbSticks.Left.X) > .65f) || (Mathf.Abs (state.ThumbSticks.Left.Y) > .65f))) {
+
+			swordThrowAngle = new Vector3 (state.ThumbSticks.Left.X, state.ThumbSticks.Left.Y, 0);
+		}
+
+		// aiming button controls released
+		if ((state.Triggers.Left <= .5f && prevState.Triggers.Left > .5f) && canAttack) {    //  && Controller){
+			isChargingThrow = false;
+			leftRightEnabled = true;
+			SwordThrow(swordThrowAngle);
+		}
+
+
+		// input for  swinging
+		if (prevState.Triggers.Right <= .5f && state.Triggers.Right > .5f && !onWallLeft && !onWallRight && swingEnabled) {
+			if (grounded) {
+				grappleDirection = new Vector2 (0,1);
+			}else if (facingRight) {
+				grappleDirection = new Vector2 (1, 1);
+			} else {
+				grappleDirection = new Vector2 (-1, 1);
+			}
+
+			RaycastHit2D swingHit = Physics2D.Raycast (transform.position, grappleDirection, Mathf.Infinity, groundMask);
+			swingPoint = swingHit.point;
+			SwingRadius = swingHit.distance;
+			grappleAnchor.transform.position = swingPoint;
+			grappleAnchor.SetActive (true);
+			LR.enabled = true;
+			ChainHixbox.SetActive (true);
+			StartCoroutine (SwingingCooldown ());
+			swinging = true;
+			leftRightEnabled = false;
+		}
+		// input for releasing swing
+		if (prevState.Triggers.Right > .5f && state.Triggers.Right <= .5f) {
+			BreakLine ();
+		}
+		// inptut for secondary released
+		if (state.Buttons.RightShoulder == ButtonState.Released && prevState.Buttons.RightShoulder == ButtonState.Pressed) {
+
+		}
+		// input for shooting secondary
+		if (state.Buttons.RightShoulder == ButtonState.Pressed) {
+		}
+		// menu control
+		if (state.Buttons.Start == ButtonState.Pressed && prevState.Buttons.Start == ButtonState.Released && Time.timeScale == 1) {
+
+
+		}
+
+		// x button for swinging
+		if (state.Buttons.X == ButtonState.Pressed && prevState.Buttons.X == ButtonState.Released && dash && canAttack && !isChargingThrow && hasSword) {
+
+			StartCoroutine (CircleAttack ());
+
+			// old call for dash attack
+			//StartCoroutine (DashAttack(state.ThumbSticks.Left.X, state.ThumbSticks.Left.Y));
+
+		}
+		if (prevState.Buttons.X == ButtonState.Pressed && state.Buttons.X == ButtonState.Released) {
+
 		}
 	}
 
@@ -348,7 +370,6 @@ public class PlayerControlScript : MonoBehaviour {
 			
 	}
 	IEnumerator CircleAttack(){
-		//inputEnabled = false;
 		canAttack = false;
 		swingEffect.transform.eulerAngles = new Vector3 (180, 0, 0);
 		swingEffect.SetActive (true);
@@ -382,107 +403,66 @@ public class PlayerControlScript : MonoBehaviour {
 		yield return null;
 
 		swingEffect.SetActive (false);
-		inputEnabled = true;
 		yield return new WaitForSeconds (.25f);
 		canAttack = true;
 	}
-	/*
-	IEnumerator CircleAttack(){
-		//inputEnabled = false;
-		canAttack = false;
-		swingEffect.SetActive (true);
-		yield return new WaitForSeconds (.05f);
 
-		RaycastHit2D[] hit =  Physics2D.CircleCastAll (transform.position, 1f, Vector2.zero, 0f, playerGroundMask);
+	// function to shoot sword out
+	void SwordThrow(Vector3 direction ){
+		if (hasSword) {
+			hasSword = false;
+			float chargeTime =  Time.time - throwTimerStart;
+			if (chargeTime > 1f) {
+				chargeTime = 1f;
+			}
+			// tmp change
+			chargeTime = 15f;
+			StartCoroutine (SwordThrowAnim (direction, chargeTime));
+		}
+	}
+	IEnumerator SwordThrowAnim(Vector3 direction, float forceMultiplyer){
+		Debug.Log (direction + "   " + forceMultiplyer);
+		thrownSword.transform.position = transform.position;
+		thrownSword.transform.eulerAngles = new Vector3 (0, 0, Mathf.Atan2(direction.y, direction.x)*Mathf.Rad2Deg - 90);
+		thrownSword.gameObject.SetActive (true);
+		thrownSword.velocity = thrownSword.transform.up * forceMultiplyer;
 
-		foreach (RaycastHit2D player in hit){
-			if (player.collider.gameObject != gameObject && player.collider.tag == "Player") {
+		/*
+		float currentDistance = 0;
+		GameObject lastLink = thrownSword.gameObject;
+		for (int x  = 0; x < 50; x++){
+			float newDistance = Vector3.Distance (transform.position, thrownSword.transform.position);
+			float difference = newDistance - currentDistance;
 
-					player.collider.GetComponent<HealthScript> ().DealDamage (100);
-					SS.IncrementKill (playerNumber);
-			}else if (player.collider.tag == "Chain" && player.collider.gameObject != ChainHixbox){
-				player.collider.GetComponent<ChainDestructionScript> ().DestroyChain ();
+			if ( difference > .5) {
+				currentDistance = newDistance;
+				while (difference > 0){
+					GameObject tmp = chainLinkPool.FetchObject ();
+					tmp.transform.position = Vector3.MoveTowards (lastLink.transform.position, transform.position, .5f);
+
+					Vector2 diff = transform.position - new Vector3 (lastLink.transform.position.x, lastLink.transform.position.y, 0);
+					Quaternion rot = Quaternion.Euler (0, 0, 180 - Mathf.Atan2 (diff.x, diff.y) * Mathf.Rad2Deg);
+
+					tmp.transform.rotation = rot;
+					tmp.GetComponent<HingeJoint2D> ().connectedBody = null;
+					tmp.GetComponent<HingeJoint2D> ().enabled = true;
+					tmp.GetComponent<HingeJoint2D> ().connectedBody = lastLink.GetComponent<Rigidbody2D>();
+					tmp.SetActive (true);
+					lastLink = tmp;
+					difference -= .5f;
+				}
 
 			}
-		}
+			yield return null;
+		}*/
+		yield return null;
+		// start reeling in chain
+		//hasSword = true;
 
-		yield return new WaitForSeconds (.05f);
-		swingEffect.SetActive (false);
-		inputEnabled = true;
-		yield return new WaitForSeconds (.15f);
-		canAttack = true;
+
+		
 	}
-*\
-	// old dash attack variant
-	/*
-	IEnumerator DashAttack(float x, float y){
 
-		inputEnabled = false;
-
-		if (!grounded) {
-			dash = false;
-		}
-		BreakLine ();
-		if (onWallLeft) {
-			onWallLeft = false;
-		}
-		if (onWallRight){
-			onWallRight = false;
-		}
-		// constrain x
-		if (x > .5f) {
-			x = 1;
-		} else if (x < -.5f) {
-			x = -1;
-		} else {
-			x = 0;
-		}
-
-		// constrain y
-		if (y > .5f) {
-			y = 1;
-		} else if (y < -.5f) {
-			y = -1;
-		} else {
-			y = 0;
-		}
-		// swing effect
-
-		SR.color = Color.red;
-
-		RaycastHit2D hitCheck = Physics2D.Raycast (transform.position, new Vector3(x, y, 0), 4.5f, playerGroundMask);
-		RB.gravityScale = 0;
-		 if (x == 0 || y == 0) {
-			RB.velocity = new Vector3 (x * DashSpeed, y * DashSpeed, 0);
-			yield return new WaitForSeconds (.05f);
-		} else {
-			RB.velocity = new Vector3 (x * DashSpeed/1.5f, y * DashSpeed/1.5f, 0);
-			yield return new WaitForSeconds (.05f);
-
-		}
-
-	
-
-
-
-
-		// check hit and do damage
-		if (hitCheck.collider != null && hitCheck.collider.tag == "Player"){
-
-			// send message to health script
-			Debug.Log ("hit");
-			//hitCheck.collider.gameObject.GetComponent<HealthScript>().DealDamage(100);
-		}
-
-		RB.gravityScale = 3;
-
-		SR.color = Color.white;
-		RB.velocity = Vector3.zero;
-		RB.gravityScale = 3;
-		inputEnabled = true;
-
-	}
-	*/
 	public int GetPlayerNumber(){
 		return playerNumber;
 	}
@@ -496,8 +476,12 @@ public class PlayerControlScript : MonoBehaviour {
 
 	}
 	public void DisableControls(){
-		inputEnabled = false;
+		movementInputEnabled = false;
 		gameOver = true;
 		BreakLine ();
+	}
+
+	public void ReturnSword(){
+		hasSword = true;
 	}
 }
