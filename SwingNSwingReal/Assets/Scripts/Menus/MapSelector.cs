@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using XInputDotNetPure; 
+using UnityEngine.SceneManagement;
 public class MapSelector : MonoBehaviour {
 	public int playerNumber;
 	private int playerX = 0;
@@ -29,6 +30,9 @@ public class MapSelector : MonoBehaviour {
 	// Update is called once per frame
 	void FixedUpdate () {
 		state = GamePad.GetState (playerIndex, GamePadDeadZone.None);
+		if (state.Buttons.B == ButtonState.Pressed) {
+			SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex - 1);
+		}
 		if(!selected)
 		{
 			if (state.Buttons.A == ButtonState.Pressed) {

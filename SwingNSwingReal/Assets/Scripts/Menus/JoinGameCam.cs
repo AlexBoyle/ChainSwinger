@@ -25,7 +25,7 @@ public class JoinGameCam : MonoBehaviour {
 	
 	// Update is called once per frame
 	void FixedUpdate () {
-		if (players > 1 && players == readyPlayers) {
+		if (players > 0 && players == readyPlayers) {
 			//send info to an objec that is not destroyed to move info to the next scene
 			//num of players
 			GameObject.Find("ImmortalObject").GetComponent<ImmortalObjectScript>().numPlayers(players);
