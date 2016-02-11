@@ -350,8 +350,8 @@ public class PlayerControlScript : MonoBehaviour {
 
 				lastLink = tmp.GetComponent<Rigidbody2D> ();
 
-				StartCoroutine (chainAnimTimer());
 			}
+			StartCoroutine (chainAnimTimer());
 		}
 	}
 	IEnumerator chainAnimTimer(){
