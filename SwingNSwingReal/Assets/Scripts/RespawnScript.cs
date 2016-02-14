@@ -51,18 +51,22 @@ public class RespawnScript : MonoBehaviour {
 		case 0:
 			tmp.transform.position = new Vector3 (-4, 0, 0);
 			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.red;
+			tmp.GetComponentInChildren<PlayerControlScript> ().SetColor (Color.red);
 			break;
 		case 1:
 			tmp.transform.position = new Vector3 (4, 0, 0);
 			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.blue;
+			tmp.GetComponentInChildren<PlayerControlScript> ().SetColor (Color.blue);
 			break;
 		case 2:
 			tmp.transform.position = new Vector3 (-8, 0, 0);
 			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.yellow;
+			tmp.GetComponentInChildren<PlayerControlScript> ().SetColor (Color.yellow);
 			break;
 		case 3:
 			tmp.transform.position = new Vector3 (8, 0, 0);
 			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.green;
+			tmp.GetComponentInChildren<PlayerControlScript> ().SetColor (Color.green);
 			break;
 		}
 

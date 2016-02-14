@@ -47,7 +47,7 @@ public class SelfTurnOffScript : MonoBehaviour {
 			PC.enabled = true;
 		}
 		if (random) {
-			float x = Random.Range (-randomInterval, randomInterval);
+			float x = Random.Range (0, randomInterval);
 			StartCoroutine(TurnOff(newDelay + x));
 		} else {
 
@@ -61,15 +61,15 @@ public class SelfTurnOffScript : MonoBehaviour {
 	}
 	IEnumerator TurnOff(float newDelay){
 		if (IsChainLink) {
-			yield return new WaitForSeconds (newDelay -1);
+			yield return new WaitForSeconds (newDelay-2);
 			GetComponent<ChainLinkScript> ().DelinkChain ();
-			yield return new WaitForSeconds (1);
+			yield return new WaitForSeconds (2);
 		} else {
 			yield return new WaitForSeconds (newDelay);
 		}
 
 		if (shrink) {
-			for (int x = 0; x < 50; x++) {
+			for (int x = 0; x < 30; x++) {
 				if (transform.localScale.x > 0 && transform.localScale.y > 0 && transform.localScale.z > 0) {
 					transform.localScale -= new Vector3 (.01f, .01f, .01f);
 				}
@@ -78,6 +78,7 @@ public class SelfTurnOffScript : MonoBehaviour {
 		} else if (sinkIntoGround) {
 			PC.enabled = false;
 			RB.gravityScale = .05f;
+			RB.velocity = Vector3.zero;
 			yield return new WaitForSeconds (1f);
 		}
 

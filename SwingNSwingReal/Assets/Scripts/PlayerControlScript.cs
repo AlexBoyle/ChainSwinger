@@ -12,7 +12,7 @@ public class PlayerControlScript : MonoBehaviour {
 	public bool BlockReelIn = false;
 	float xStick, yStick, deadSize = .25f;
 	bool movementInputEnabled = true, doubleJump = false, grounded = false, onWallRight = false, onWallLeft = false, leftRightEnabled = true, swinging = false, facingRight, dash = false, 
-	canAttack = true, swingEnabled = true, gameOver = false, chainAnimAllowed = true, hasSword, isChargingThrow = false;
+	canAttack = true, swingEnabled = true, gameOver = false, chainAnimAllowed = true, hasSword = true, isChargingThrow = false;
 	ScoreScript SS;
 	public Sprite[] SwordAnimations;
 
@@ -24,6 +24,7 @@ public class PlayerControlScript : MonoBehaviour {
 	Vector3 prevPosition, swordThrowAngle;
 	float SwingRadius, throwTimerStart;
 	public LineRenderer LR;
+	public SpriteRenderer swordColor;
 	SpriteRenderer SR;
 	//ObjectPoolScript SwingEffectPool;
 
@@ -49,11 +50,11 @@ public class PlayerControlScript : MonoBehaviour {
 		leftRightEnabled = true;
 		movementInputEnabled = true;
 		swinging = false;
-		canAttack = true;
 		swingEnabled = true;
 		chainAnimAllowed = true;
-		hasSword = true;
 		isChargingThrow = false;
+		canAttack = true;
+
 	}
 	
 	// Update is called once per frame
@@ -181,7 +182,7 @@ public class PlayerControlScript : MonoBehaviour {
 	void AttackControls(){
 		// trigger press for starting the charge on throwing the sword
 		if (state.Triggers.Left > .5f && prevState.Triggers.Left <= .5f && hasSword) {    //  && Controller){
-
+			SwordThrow(swordThrowAngle);
 			//throwTimerStart = Time.time;
 			//leftRightEnabled = false;
 			//isChargingThrow = true;
@@ -190,13 +191,13 @@ public class PlayerControlScript : MonoBehaviour {
 		if (((Mathf.Abs (state.ThumbSticks.Left.X) > .65f) || (Mathf.Abs (state.ThumbSticks.Left.Y) > .65f))) {
 
 			swordThrowAngle = new Vector3 (state.ThumbSticks.Left.X, state.ThumbSticks.Left.Y, 0);
+
 		}
 
 		// aiming button controls released
 		if ((state.Triggers.Left <= .5f && prevState.Triggers.Left > .5f) && canAttack) {    //  && Controller){
-			isChargingThrow = false;
-			leftRightEnabled = true;
-			SwordThrow(swordThrowAngle);
+			
+
 		}
 
 
@@ -483,5 +484,8 @@ public class PlayerControlScript : MonoBehaviour {
 
 	public void ReturnSword(){
 		hasSword = true;
+	}
+	public void SetColor(Color newColor){
+		swordColor.color = newColor;
 	}
 }

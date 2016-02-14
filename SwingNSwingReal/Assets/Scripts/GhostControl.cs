@@ -39,4 +39,13 @@ public class GhostControl : MonoBehaviour {
 		}
 	}
 
+	public int GetPlayerNumber(){
+		return PCS.GetPlayerNumber ();	
+	}
+
+	public void ReturnSword(){
+		PCS.ReturnSword ();
+	}
+
+
 }
