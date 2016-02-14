@@ -33,7 +33,7 @@ public class PlayerControlScript : MonoBehaviour {
 	void Start () {
 		groundMask = 1 << 8;
 		playerGroundMask = 1 << 9; // maybe nine maybe just a number
-		playerIndex = (PlayerIndex)playerNumber;
+		playerIndex = (PlayerIndex)0;
 		SR = GetComponent<SpriteRenderer> ();
 		SS = GameObject.Find ("ScoreObject").GetComponent<ScoreScript>();
 		SS.AddPlayer (gameObject);

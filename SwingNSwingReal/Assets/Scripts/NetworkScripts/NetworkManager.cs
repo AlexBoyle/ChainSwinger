@@ -3,7 +3,6 @@ using System.Collections;
 
 public class NetworkManager : MonoBehaviour {
 	
-
 	public RespawnScript RS;
 	// Use this for initialization
 	void Start () {
@@ -31,5 +30,6 @@ public class NetworkManager : MonoBehaviour {
 	}
 	void SpawnMyPlayer(){
 		RS.InitialSpawn (0);
+
 	}
 }

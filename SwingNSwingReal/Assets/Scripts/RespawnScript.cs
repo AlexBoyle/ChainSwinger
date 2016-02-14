@@ -45,19 +45,11 @@ public class RespawnScript : MonoBehaviour {
 		players [playerNumber] = tmp;
 
 
-	} 
-	*/
-
+	} */
 	public void InitialSpawn(int playerNumber){
-		GameObject tmp =  PhotonNetwork.Instantiate ("PlayerWrapper", Vector3.zero, Quaternion.identity, 0) as GameObject;
-		if (playerNumber == 0) {
-			tmp.transform.position = new Vector3 (-4, 0, 0);
-			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.blue;
-		} else {
-			tmp.transform.position = new Vector3 (4, 0, 0);
-			tmp.GetComponentInChildren<SpriteRenderer> ().color = Color.red;
-		}
-		tmp.GetComponentInChildren<PlayerControlScript> ().playerNumber = playerNumber;
-		players [playerNumber] = tmp;
+		GameObject MyPlayerGO =  (GameObject)PhotonNetwork.Instantiate ("PlayerWrapper", Vector3.zero, Quaternion.identity, 0);
+		MyPlayerGO.GetComponentInChildren<PlayerControlScript> ().enabled = true;
+
 	}
+
 }
