@@ -27,11 +27,12 @@ public class ScoreScript : MonoBehaviour {
 		nextPlayer++;
 	}
 	public void IncrementKill(int playerNumber){
-		if (noWinners) {
-			playerKills [playerNumber]++;
-			StartCoroutine (LerpBar ());
-			CheckWin ();
-		}
+		if (playerNumber >= 0)
+			if (noWinners) {
+				playerKills [playerNumber]++;
+				StartCoroutine (LerpBar ());
+				CheckWin ();
+			}
 	}
 	void CheckWin(){
 		for (int x = 0; x < 4; x++) {
