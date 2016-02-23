@@ -1,9 +1,3 @@
-
-
-/// <summary>
-/// ///////////   DUDE ADD VELOCITY
-/// </summary>
-
 using UnityEngine;
 
 public class NetworkCharacter : Photon.MonoBehaviour
@@ -14,7 +8,7 @@ public class NetworkCharacter : Photon.MonoBehaviour
     void Update()
     {
 		
-		if (!photonView.isMine) {
+		if (!photonView.isMine) {                 //    .3f feels good between fast and smooth without too much lag.
             transform.position = Vector3.Lerp(transform.position, this.realPosition, .3f);
             transform.rotation = Quaternion.Lerp(transform.rotation, this.realRotation, .3f);
         }
@@ -28,19 +22,12 @@ public class NetworkCharacter : Photon.MonoBehaviour
             // We own this player: send the others our data
             stream.SendNext(transform.position);
             stream.SendNext(transform.rotation);
-
-
-            //myThirdPersonController myC = GetComponent<myThirdPersonController>();
-           // stream.SendNext((int)myC._characterState);
         }
         else
         {
             // Network player, receive data
 			realPosition = (Vector3)stream.ReceiveNext();
 			realRotation = (Quaternion)stream.ReceiveNext();
-
-           // myThirdPersonController myC = GetComponent<myThirdPersonController>();
-         //   myC._characterState = (CharacterState)stream.ReceiveNext();
         }
     }
 }
