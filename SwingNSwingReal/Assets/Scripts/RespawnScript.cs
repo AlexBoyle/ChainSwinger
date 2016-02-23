@@ -50,6 +50,9 @@ public class RespawnScript : MonoBehaviour {
 		GameObject MyPlayerGO =  (GameObject)PhotonNetwork.Instantiate ("PlayerWrapper", Vector3.zero, Quaternion.identity, 0);
 		MyPlayerGO.GetComponentInChildren<PlayerControlScript> ().enabled = true;
 
+
+		//MyPlayerGO.GetComponentInChildren<NetworkCharacter> ().enabled = false;
+		MyPlayerGO.transform.FindChild ("Player").GetComponent<Rigidbody2D> ().gravityScale = 3;
 	}
 
 }
