@@ -1,18 +1,17 @@
 ﻿using UnityEngine;
 using System.Collections;
-using XInputDotNetPure; // Required in C#
 
 public class PlayerControlScript : MonoBehaviour {
 
 	public Rigidbody2D RB;
 	public float groundSpeed, jumpHeight, DashSpeed;
-	public GameObject ghost, grappleAnchor, ChainHixbox, swingEffect;
+	public GameObject ghost, grappleAnchor, ChainHixbox, swingEffect, chargeSprite, chargeParticles;
 	public Rigidbody2D thrownSword;
 	public int playerNumber;
 	public bool BlockReelIn = false;
 	float xStick, yStick, deadSize = .25f;
 	bool movementInputEnabled = true, doubleJump = false, grounded = false, onWallRight = false, onWallLeft = false, leftRightEnabled = true, swinging = false, facingRight, dash = false, 
-	canAttack = true, swingEnabled = true, gameOver = false, chainAnimAllowed = true, hasSword = true, isChargingThrow = false;
+	canAttack = true, swingEnabled = true, gameOver = false, chainAnimAllowed = true, hasSword = true, isChargingThrow = false, fullyCharged = false;
 	ScoreScript SS;
 	public Sprite[] SwordAnimations;
 
@@ -28,14 +27,12 @@ public class PlayerControlScript : MonoBehaviour {
 	SpriteRenderer SR;
 	//ObjectPoolScript SwingEffectPool;
 
-	PlayerIndex playerIndex;
-	GamePadState state;
-	GamePadState prevState;
+
 	// Use this for initializationswing
 	void Start () {
 		groundMask = 1 << 8;
 		playerGroundMask = 1 << 9; // maybe nine maybe just a number
-		playerIndex = (PlayerIndex)playerNumber;
+
 		SR = GetComponent<SpriteRenderer> ();
 		SS = GameObject.Find ("ScoreObject").GetComponent<ScoreScript>();
 		SS.AddPlayer (gameObject);
@@ -60,8 +57,7 @@ public class PlayerControlScript : MonoBehaviour {
 	// Update is called once per frame
 	void FixedUpdate () {
 		if (!gameOver) {
-			prevState = state;
-			state = GamePad.GetState (playerIndex, GamePadDeadZone.None);
+			
 
 			// do a check for ground
 			RaycastHit2D groundCheck = Physics2D.Raycast (transform.position, Vector2.down, .35f, groundMask);
@@ -107,105 +103,88 @@ public class PlayerControlScript : MonoBehaviour {
 				onWallLeft = false;
 			}
 
+			UpdateChain ();
 
-			if (movementInputEnabled) {
-				// axis crontrols for horizontal movement
-				if (Mathf.Abs (state.ThumbSticks.Left.X) > deadSize && !onWallRight && !onWallLeft && leftRightEnabled && !isChargingThrow) {
-					xStick = state.ThumbSticks.Left.X;
-				} else if (grounded) {
-					xStick = 0;
-				} else {
-					xStick = RB.velocity.x / groundSpeed;
-				}
-
-				if (xStick > 0) {
-					facingRight = true;
-				} else if (xStick < 0) {
-					facingRight = false;
-				}
-
-				if (((RB.velocity.x <= xStick * groundSpeed) && (xStick > 0) || (RB.velocity.x >= xStick * groundSpeed) && (xStick < 0)) || grounded) {
-						RB.velocity = new Vector3 (xStick * groundSpeed, RB.velocity.y, 0);
-				}
-
-
-				// jump button
-				if (state.Buttons.A == ButtonState.Pressed && prevState.Buttons.A != ButtonState.Pressed && !isChargingThrow) {
-					// check if grounded
-					if (grounded && !isChargingThrow) {
-						RB.velocity = new Vector2 (RB.velocity.x, 0);
-						RB.AddForce (new Vector2 (0, jumpHeight));
-						grounded = false;
-						groundedBuffer = 1;
-						wallBuffer = 10;
-					} else if (onWallLeft || onWallRight) {
-						WallJump ();
-					} else if (doubleJump) {
-						BreakLine ();
-						RB.velocity = new Vector2 (RB.velocity.x, 0);
-						RB.AddForce (new Vector2 (0, jumpHeight));
-						doubleJump = false;
-					}
-				}
-
-				if (onWallLeft || onWallRight) {
-					RB.velocity = new Vector2 (0f, -.75f);
-				}
-
-
-			}
-
-			AttackControls ();
-			// change up velocity based on swinging state
-			if (swinging) {
-				CheckLineBreaks ();
-
-				// reel in line
-				if (SwingRadius > 1 && !BlockReelIn) {
-					SwingRadius -= .05f;
-				}
-
-				LineGraphicsUpdate ();
-				if (Vector2.Distance (transform.position, swingPoint) > SwingRadius) {
-					
-					transform.position = Vector2.MoveTowards (transform.position, swingPoint, Vector2.Distance (transform.position, swingPoint) - SwingRadius);
-					RB.velocity = (transform.position - prevPosition) / Time.deltaTime;
-				}
-			}
-			
-		
 			prevPosition = transform.position;
 		}
 	}
+	void UpdateChain(){
+		// change up velocity based on swinging state
+		if (swinging) {
+			CheckLineBreaks ();
 
+			LineGraphicsUpdate ();
+			if (Vector2.Distance (transform.position, swingPoint) > SwingRadius) {
+
+				transform.position = Vector2.MoveTowards (transform.position, swingPoint, Vector2.Distance (transform.position, swingPoint) - SwingRadius);
+				RB.velocity = (transform.position - prevPosition) / Time.deltaTime;
+			}
+		}
+	}
+
+	public void Jump(){
+		// check if grounded
+		if (grounded) {
+			RB.velocity = new Vector2 (RB.velocity.x, 0);
+			RB.AddForce (new Vector2 (0, jumpHeight));
+			grounded = false;
+			groundedBuffer = 1;
+			wallBuffer = 10;
+		} else if (onWallLeft || onWallRight) {
+			WallJump ();
+		} else if (doubleJump) {
+			BreakLine ();
+			RB.velocity = new Vector2 (RB.velocity.x, 0);
+			RB.AddForce (new Vector2 (0, jumpHeight));
+			doubleJump = false;
+		}
+	}
 	// ----------------- // section of controls for doing attacks and swinging chain \\ ----------------- \\
-	void AttackControls(){
-		// trigger press for starting the charge on throwing the sword
-		if (state.Triggers.Left > .5f && prevState.Triggers.Left <= .5f && hasSword) {    //  && Controller){
-			SwordThrow(swordThrowAngle);
+	public void SwordThrowPress(){
+		if (hasSword && canAttack){
+			throwTimerStart = Time.time;
+			//leftRightEnabled = false;
+			chargeSprite.SetActive(true);
+			isChargingThrow = true;
+		}
+	}
+
+	public void SwordThrowHold(){
+		if (isChargingThrow) {
+			if ((Time.time - throwTimerStart) > .5f) {
+				fullyCharged = true;
+				chargeParticles.SetActive (true);
+			}
+		}
+	}
+	public void SwordThrowRelease(){
+		if (hasSword && isChargingThrow) {
+			if (fullyCharged) {
+				SwordThrow (swordThrowAngle);
+			}
 			//throwTimerStart = Time.time;
 			//leftRightEnabled = false;
-			//isChargingThrow = true;
+			chargeSprite.SetActive (false);
+
+			chargeParticles.SetActive (false);
+			isChargingThrow = false;
 		}
-		// aiming 
-		if (((Mathf.Abs (state.ThumbSticks.Left.X) > .65f) || (Mathf.Abs (state.ThumbSticks.Left.Y) > .65f))) {
+	}
 
-			swordThrowAngle = new Vector3 (state.ThumbSticks.Left.X, state.ThumbSticks.Left.Y, 0);
-
+	public void ReelInChain(){
+		if (swinging) {
+			// reel in line
+			if (SwingRadius > 1 && !BlockReelIn) {
+				SwingRadius -= .1f;
+			}
 		}
+	}
 
-		// aiming button controls released
-		if ((state.Triggers.Left <= .5f && prevState.Triggers.Left > .5f) && canAttack) {    //  && Controller){
-			
-
-		}
-
-
-		// input for  swinging
-		if (prevState.Triggers.Right <= .5f && state.Triggers.Right > .5f && !onWallLeft && !onWallRight && swingEnabled) {
+	public void ChainSwingPress(){
+		if (!onWallLeft && !onWallRight && swingEnabled) {
 			if (grounded) {
-				grappleDirection = new Vector2 (0,1);
-			}else if (facingRight) {
+				grappleDirection = new Vector2 (0, 1);
+			} else if (facingRight) {
 				grappleDirection = new Vector2 (1, 1);
 			} else {
 				grappleDirection = new Vector2 (-1, 1);
@@ -221,38 +200,61 @@ public class PlayerControlScript : MonoBehaviour {
 			StartCoroutine (SwingingCooldown ());
 			swinging = true;
 			leftRightEnabled = false;
-		}
-		// input for releasing swing
-		if (prevState.Triggers.Right > .5f && state.Triggers.Right <= .5f) {
-			BreakLine ();
-		}
-		// inptut for secondary released
-		if (state.Buttons.RightShoulder == ButtonState.Released && prevState.Buttons.RightShoulder == ButtonState.Pressed) {
-
-		}
-		// input for shooting secondary
-		if (state.Buttons.RightShoulder == ButtonState.Pressed) {
-		}
-		// menu control
-		if (state.Buttons.Start == ButtonState.Pressed && prevState.Buttons.Start == ButtonState.Released && Time.timeScale == 1) {
-
-
-		}
-
-		// x button for swinging
-		if (state.Buttons.X == ButtonState.Pressed && prevState.Buttons.X == ButtonState.Released && dash && canAttack && !isChargingThrow && hasSword) {
-
-			StartCoroutine (CircleAttack ());
-
-			// old call for dash attack
-			//StartCoroutine (DashAttack(state.ThumbSticks.Left.X, state.ThumbSticks.Left.Y));
-
-		}
-		if (prevState.Buttons.X == ButtonState.Pressed && state.Buttons.X == ButtonState.Released) {
-
+			UpdateChain ();
 		}
 	}
 
+	// attack wrapper
+	public void StartSwingAttack(){
+		if (dash && canAttack && !isChargingThrow && hasSword){
+			StartCoroutine (CircleAttack ());
+		}
+	}
+	// function that handles all movement related functions
+	public void MovementControl(float xAxis, float yAxis){
+		// aiming 
+		if (((Mathf.Abs (xAxis) > .65f) || (Mathf.Abs (yAxis) > .65f))) {
+			swordThrowAngle = new Vector3 (xAxis, yAxis, 0);
+
+		}
+		if (movementInputEnabled) {
+			// axis crontrols for horizontal movement
+			if (Mathf.Abs (xAxis) > deadSize && !onWallRight && !onWallLeft && leftRightEnabled) {
+				xStick = xAxis;
+			} else if (grounded) {
+				xStick = 0;
+			} else {
+				xStick = RB.velocity.x / groundSpeed;
+			}
+
+			if (xStick > 0) {
+				facingRight = true;
+				chargeSprite.transform.eulerAngles = new Vector3(0, 180,-30 );
+				chargeSprite.transform.localPosition = new Vector3(-.3f, 0, 0);
+			} else if (xStick < 0) {
+				facingRight = false;
+
+				chargeSprite.transform.eulerAngles = new Vector3(0, 0,-30 );
+				chargeSprite.transform.localPosition = new Vector3(.3f, 0, 0);
+			}
+
+
+
+			if (((RB.velocity.x <= xStick * groundSpeed) && (xStick > 0) || (RB.velocity.x >= xStick * groundSpeed) && (xStick < 0)) || grounded) {
+				RB.velocity = new Vector3 (xStick * groundSpeed, RB.velocity.y, 0);
+			}
+
+
+
+
+			if (onWallLeft || onWallRight) {
+				RB.velocity = new Vector2 (0f, -.75f);
+			}
+
+
+		}
+
+	}
 	void WallJump(){
 		RB.velocity = new Vector2 (RB.velocity.x, 0);
 		dash = true;
@@ -412,12 +414,9 @@ public class PlayerControlScript : MonoBehaviour {
 	void SwordThrow(Vector3 direction ){
 		if (hasSword) {
 			hasSword = false;
-			float chargeTime =  Time.time - throwTimerStart;
-			if (chargeTime > 1f) {
-				chargeTime = 1f;
-			}
+
 			// tmp change
-			chargeTime = 15f;
+			float chargeTime = 15f;
 			StartCoroutine (SwordThrowAnim (direction, chargeTime));
 		}
 	}
@@ -427,41 +426,7 @@ public class PlayerControlScript : MonoBehaviour {
 		thrownSword.transform.eulerAngles = new Vector3 (0, 0, Mathf.Atan2(direction.y, direction.x)*Mathf.Rad2Deg - 90);
 		thrownSword.gameObject.SetActive (true);
 		thrownSword.velocity = thrownSword.transform.up * forceMultiplyer;
-
-		/*
-		float currentDistance = 0;
-		GameObject lastLink = thrownSword.gameObject;
-		for (int x  = 0; x < 50; x++){
-			float newDistance = Vector3.Distance (transform.position, thrownSword.transform.position);
-			float difference = newDistance - currentDistance;
-
-			if ( difference > .5) {
-				currentDistance = newDistance;
-				while (difference > 0){
-					GameObject tmp = chainLinkPool.FetchObject ();
-					tmp.transform.position = Vector3.MoveTowards (lastLink.transform.position, transform.position, .5f);
-
-					Vector2 diff = transform.position - new Vector3 (lastLink.transform.position.x, lastLink.transform.position.y, 0);
-					Quaternion rot = Quaternion.Euler (0, 0, 180 - Mathf.Atan2 (diff.x, diff.y) * Mathf.Rad2Deg);
-
-					tmp.transform.rotation = rot;
-					tmp.GetComponent<HingeJoint2D> ().connectedBody = null;
-					tmp.GetComponent<HingeJoint2D> ().enabled = true;
-					tmp.GetComponent<HingeJoint2D> ().connectedBody = lastLink.GetComponent<Rigidbody2D>();
-					tmp.SetActive (true);
-					lastLink = tmp;
-					difference -= .5f;
-				}
-
-			}
-			yield return null;
-		}*/
 		yield return null;
-		// start reeling in chain
-		//hasSword = true;
-
-
-		
 	}
 
 	public int GetPlayerNumber(){

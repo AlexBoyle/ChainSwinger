@@ -27,7 +27,7 @@ public class ScoreScript : MonoBehaviour {
 		nextPlayer++;
 	}
 	public void IncrementKill(int playerNumber){
-		if (noWinners) {
+		if (noWinners && playerNumber >= 0) {
 			playerKills [playerNumber]++;
 			StartCoroutine (LerpBar ());
 			CheckWin ();
@@ -41,7 +41,7 @@ public class ScoreScript : MonoBehaviour {
 				for(int i = 0; i < nextPlayer; i++){
 					Players [i].GetComponent<PlayerControlScript> ().DisableControls ();
 				}
-				winText.text = "Player " + x + " Wins";
+				winText.text = "Player " + x + 1 + " Wins";
 				Invoke ("ReloadLevel", 5f);
 
 			}
