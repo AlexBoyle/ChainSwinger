@@ -41,7 +41,8 @@ public class ScoreScript : MonoBehaviour {
 				for(int i = 0; i < nextPlayer; i++){
 					Players [i].GetComponent<PlayerControlScript> ().DisableControls ();
 				}
-				winText.text = "Player " + x + 1 + " Wins";
+				x++;
+				winText.text = "Player " + x  + " Wins";
 				Invoke ("ReloadLevel", 5f);
 
 			}

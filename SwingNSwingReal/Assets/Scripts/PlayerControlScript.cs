@@ -14,11 +14,12 @@ public class PlayerControlScript : MonoBehaviour {
 	canAttack = true, swingEnabled = true, gameOver = false, chainAnimAllowed = true, hasSword = true, isChargingThrow = false, fullyCharged = false;
 	ScoreScript SS;
 	public Sprite[] SwordAnimations;
+	InputScript IS;
 
 	public ObjectPoolScript chainLinkPool;
 
 	int groundMask, playerGroundMask;
-	int groundedBuffer = 0, wallBuffer = 0;
+	int groundedBuffer = 0, wallBuffer = 0, wallEjectBuffer = 0;
 	Vector2 swingPoint, grappleDirection;
 	Vector3 prevPosition, swordThrowAngle;
 	float SwingRadius, throwTimerStart;
@@ -33,6 +34,7 @@ public class PlayerControlScript : MonoBehaviour {
 		groundMask = 1 << 8;
 		playerGroundMask = 1 << 9; // maybe nine maybe just a number
 
+		IS = GetComponent<InputScript> ();
 		SR = GetComponent<SpriteRenderer> ();
 		SS = GameObject.Find ("ScoreObject").GetComponent<ScoreScript>();
 		SS.AddPlayer (gameObject);
@@ -103,25 +105,167 @@ public class PlayerControlScript : MonoBehaviour {
 				onWallLeft = false;
 			}
 
+
 			UpdateChain ();
+			
 
 			prevPosition = transform.position;
 		}
 	}
-	void UpdateChain(){
+
+	// ----------------- // section of controls for swinging chain \\ ----------------- \\
+	void UpdateChain(bool firstFrame = false){
 		// change up velocity based on swinging state
 		if (swinging) {
+			swingPoint = grappleAnchor.transform.position;
 			CheckLineBreaks ();
 
 			LineGraphicsUpdate ();
 			if (Vector2.Distance (transform.position, swingPoint) > SwingRadius) {
 
 				transform.position = Vector2.MoveTowards (transform.position, swingPoint, Vector2.Distance (transform.position, swingPoint) - SwingRadius);
-				RB.velocity = (transform.position - prevPosition) / Time.deltaTime;
+				RB.velocity = ((transform.position - prevPosition) / Time.deltaTime);
+				if (firstFrame) {
+					RB.velocity = RB.velocity * 25;
+					/*if (facingRight && RB.velocity.x < 10) {
+						RB.velocity = new Vector3(10, RB.velocity.y, 0);
+					} else if (RB.velocity.x > -10){
+						RB.velocity = new Vector3(-10, RB.velocity.y, 0);
+					}*/
+				}
 			}
 		}
 	}
+	// seperate button for reeling in the line
+	public void ReelInChain(){
+		if (swinging) {
+			// reel in line
+			if (SwingRadius > 1 && !BlockReelIn) {
+				SwingRadius -= .1f;
+			}
+		}
+	}
+	// handles inital button press for swinging 
+	public void ChainSwingPress(){
+		if (!onWallLeft && !onWallRight && swingEnabled) {
+			if (grounded) {
+				grappleDirection = new Vector2 (0, 1);
+			} else if (facingRight) {
+				grappleDirection = new Vector2 (1, 1);
+			} else {
+				grappleDirection = new Vector2 (-1, 1);
+			}
 
+			RaycastHit2D swingHit = Physics2D.Raycast (transform.position, grappleDirection, Mathf.Infinity, groundMask);
+			swingPoint = swingHit.point;
+			SwingRadius = swingHit.distance;
+			grappleAnchor.transform.position = swingPoint;
+			grappleAnchor.transform.parent = swingHit.collider.gameObject.transform;
+			grappleAnchor.SetActive (true);
+			LR.enabled = true;
+			ChainHixbox.SetActive (true);
+			StartCoroutine (SwingingCooldown ());
+			swinging = true;
+			leftRightEnabled = false;
+			LineGraphicsUpdate ();
+			//UpdateChain (true);
+		}
+	}
+	void LineGraphicsUpdate(){
+		ChainHixbox.transform.localScale = new Vector3(Vector2.Distance (transform.position, swingPoint), 1 , 1);
+		ChainHixbox.transform.position = Vector3.MoveTowards (transform.position, swingPoint, Vector2.Distance (transform.position, swingPoint) / 2); 
+		Vector2 diff = transform.position - new Vector3(swingPoint.x, swingPoint.y, 0);
+		ChainHixbox.transform.rotation = Quaternion.Euler(0, 0,90 - Mathf.Atan2 (diff.x, diff.y) * Mathf.Rad2Deg);
+		LR.SetPosition (0, transform.position);
+		LR.SetPosition (1, swingPoint);
+		LR.material.mainTextureScale = new Vector2(Vector2.Distance (transform.position, swingPoint),1);
+	}
+
+	public void BreakLine( bool usePosition = false, Vector3 cutPosition = default(Vector3)){
+		if (swinging) {
+			grappleAnchor.SetActive (false);
+			ChainHixbox.SetActive (false);
+			LR.enabled = false;
+			swinging = false;
+			leftRightEnabled = true;
+			grappleAnchor.transform.parent = null;
+			AnimateLineBreak (usePosition, cutPosition);
+
+
+		}
+	}
+
+	void AnimateLineBreak( bool usePosition = false, Vector3 cutPosition = default(Vector3), Vector3 newPosition = default(Vector3)){
+		if (chainAnimAllowed) {
+			chainAnimAllowed = false;
+			float x = 0;
+			Vector2 diff = transform.position - new Vector3 (swingPoint.x, swingPoint.y, 0);
+			Quaternion rot = Quaternion.Euler (0, 0, 180 - Mathf.Atan2 (diff.x, diff.y) * Mathf.Rad2Deg);
+			Rigidbody2D lastLink = null;
+			bool first = true;
+			float cutPoint = 0;
+			if (usePosition) {
+				cutPoint = Vector3.Distance (swingPoint, cutPosition);
+			}
+			float lineLength = Vector2.Distance (transform.position, swingPoint);
+			if (newPosition != Vector3.zero){
+				lineLength -= Vector2.Distance (transform.position, newPosition);
+			}
+			while (x < lineLength) {
+
+				GameObject tmp = chainLinkPool.FetchObject ();
+				tmp.transform.position = Vector3.MoveTowards (swingPoint, transform.position, x);
+				tmp.transform.rotation = rot;
+				tmp.GetComponent<HingeJoint2D> ().connectedBody = null;
+				tmp.GetComponent<HingeJoint2D> ().enabled = true;
+
+				if (first) {
+
+					tmp.SetActive (true);
+
+					tmp.GetComponent<SelfTurnOffScript> ().StartCountdown ();
+					first = false;
+				} else if (lastLink != null) {
+					if (usePosition && Mathf.Abs (x - cutPoint) < 1f) {
+						Debug.Log ("break");
+						tmp.GetComponent<HingeJoint2D> ().enabled = false;
+						tmp.SetActive (true);
+						tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (-1f, 1f), Random.Range (1f, 3f), 0);
+					} else {
+						tmp.GetComponent<HingeJoint2D> ().connectedBody = lastLink;
+						tmp.SetActive (true);
+					}
+					tmp.GetComponent<SelfTurnOffScript> ().StartCountdown (3);
+				}
+
+
+				//tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (-1f, 1f), Random.Range (1f, 3f), 0);
+
+				x += .5f;
+
+				lastLink = tmp.GetComponent<Rigidbody2D> ();
+
+			}
+			StartCoroutine (chainAnimTimer());
+		}
+	}
+	IEnumerator chainAnimTimer(){
+		yield return new WaitForSeconds (.1f);
+		chainAnimAllowed = true;
+	}
+	void CheckLineBreaks(){
+		Vector2 dir =  new Vector3(swingPoint.x, swingPoint.y, 1) - transform.position;
+		RaycastHit2D hit = Physics2D.Raycast (transform.position, dir, Mathf.Infinity, groundMask);
+		if (hit.point != swingPoint) {
+			AnimateLineBreak (false, Vector3.zero, hit.point);
+			grappleAnchor.transform.parent = hit.collider.gameObject.transform;
+			swingPoint = hit.point;
+			SwingRadius = hit.distance;
+			grappleAnchor.transform.position = swingPoint;
+		}
+
+	}
+	// ----------------- // section of controls for jumping \\ ----------------- \\
 	public void Jump(){
 		// check if grounded
 		if (grounded) {
@@ -139,7 +283,22 @@ public class PlayerControlScript : MonoBehaviour {
 			doubleJump = false;
 		}
 	}
-	// ----------------- // section of controls for doing attacks and swinging chain \\ ----------------- \\
+	void WallJump(){
+		RB.velocity = new Vector2 (RB.velocity.x, 0);
+		dash = true;
+		if (onWallRight) {
+			RB.AddForce (new Vector2 (-200, jumpHeight));
+			onWallRight = false;
+		} else {
+			RB.AddForce (new Vector2 (200, jumpHeight));
+			onWallLeft = false;
+		}
+		leftRightEnabled = false;
+		wallBuffer = 2;
+		StartCoroutine (LeftRightEnabler ());
+	}
+
+	// ----------------- // section of controls for doing sword throw \\ ----------------- \\
 	public void SwordThrowPress(){
 		if (hasSword && canAttack){
 			throwTimerStart = Time.time;
@@ -161,6 +320,8 @@ public class PlayerControlScript : MonoBehaviour {
 		if (hasSword && isChargingThrow) {
 			if (fullyCharged) {
 				SwordThrow (swordThrowAngle);
+
+				fullyCharged = false;
 			}
 			//throwTimerStart = Time.time;
 			//leftRightEnabled = false;
@@ -170,39 +331,29 @@ public class PlayerControlScript : MonoBehaviour {
 			isChargingThrow = false;
 		}
 	}
+	// function to shoot sword out
+	void SwordThrow(Vector3 direction ){
+		if (hasSword) {
+			hasSword = false;
 
-	public void ReelInChain(){
-		if (swinging) {
-			// reel in line
-			if (SwingRadius > 1 && !BlockReelIn) {
-				SwingRadius -= .1f;
-			}
+			// tmp change
+			float chargeTime = 15f;
+			StartCoroutine (SwordThrowAnim (direction, chargeTime));
 		}
 	}
-
-	public void ChainSwingPress(){
-		if (!onWallLeft && !onWallRight && swingEnabled) {
-			if (grounded) {
-				grappleDirection = new Vector2 (0, 1);
-			} else if (facingRight) {
-				grappleDirection = new Vector2 (1, 1);
-			} else {
-				grappleDirection = new Vector2 (-1, 1);
-			}
-
-			RaycastHit2D swingHit = Physics2D.Raycast (transform.position, grappleDirection, Mathf.Infinity, groundMask);
-			swingPoint = swingHit.point;
-			SwingRadius = swingHit.distance;
-			grappleAnchor.transform.position = swingPoint;
-			grappleAnchor.SetActive (true);
-			LR.enabled = true;
-			ChainHixbox.SetActive (true);
-			StartCoroutine (SwingingCooldown ());
-			swinging = true;
-			leftRightEnabled = false;
-			UpdateChain ();
-		}
+	IEnumerator SwordThrowAnim(Vector3 direction, float forceMultiplyer){
+		Debug.Log (direction + "   " + forceMultiplyer);
+		thrownSword.transform.position = transform.position;
+		thrownSword.transform.eulerAngles = new Vector3 (0, 0, Mathf.Atan2(direction.y, direction.x)*Mathf.Rad2Deg - 90);
+		thrownSword.gameObject.SetActive (true);
+		thrownSword.velocity = thrownSword.transform.up * forceMultiplyer;
+		yield return null;
 	}
+	public void ReturnSword(){
+		hasSword = true;
+	}
+	// ----------------- // section of controls for doing regular attacks \\ ----------------- \\
+
 
 	// attack wrapper
 	public void StartSwingAttack(){
@@ -210,6 +361,53 @@ public class PlayerControlScript : MonoBehaviour {
 			StartCoroutine (CircleAttack ());
 		}
 	}
+	IEnumerator CircleAttack(){
+		canAttack = false;
+		swingEffect.transform.eulerAngles = new Vector3 (180, 0, 0);
+		swingEffect.SetActive (true);
+		float yRot = 180;
+		if (!facingRight) {
+			yRot = 0;
+		}
+		int animTimer = 0;
+		SpriteRenderer sword = swingEffect.GetComponent<SpriteRenderer> ();
+		for (int x = -45; x <= 170; x += 11) {
+
+			yield return null;
+			if (animTimer < 5) {
+				sword.sprite = SwordAnimations [animTimer];
+			} else if (animTimer > 5 && animTimer < 15) {
+				sword.sprite = SwordAnimations [5];
+			} else if (animTimer > 10) {
+				if (16 - animTimer >= 0) {
+					sword.sprite = SwordAnimations [16 - animTimer];
+				} else {
+					sword.sprite = SwordAnimations [0];
+				}
+			}
+			animTimer++;
+			swingEffect.transform.eulerAngles = new Vector3 (180, yRot, x);
+		}
+
+		yield return null;
+		yield return null;
+		yield return null;
+		yield return null;
+
+		swingEffect.SetActive (false);
+		yield return new WaitForSeconds (.2f);
+		canAttack = true;
+	}
+
+	IEnumerator SwingingCooldown(){
+		swingEnabled = false;
+		yield return new WaitForSeconds (.4f);
+		swingEnabled = true;
+	}
+
+
+
+	// ----------------- // section of controls for doing regular movement \\ ----------------- \\
 	// function that handles all movement related functions
 	public void MovementControl(float xAxis, float yAxis){
 		// aiming 
@@ -248,187 +446,38 @@ public class PlayerControlScript : MonoBehaviour {
 
 
 			if (onWallLeft || onWallRight) {
-				RB.velocity = new Vector2 (0f, -.75f);
+				if (onWallLeft && xAxis > .75f) {
+					wallEjectBuffer++;
+				}else if (onWallRight && xAxis < -.75){
+					wallEjectBuffer++;
+				}
+
+				if (wallEjectBuffer >= 4 && onWallLeft) {
+					RB.velocity = new Vector2 (1f, -1f);
+					wallEjectBuffer = 0;
+				} else if (wallEjectBuffer >= 4 && onWallRight){
+					RB.velocity = new Vector2 (-1f, -1f);
+					wallEjectBuffer = 0;
+				}else {
+					RB.velocity = new Vector2 (0f, -1f);
+				}
 			}
 
 
 		}
 
 	}
-	void WallJump(){
-		RB.velocity = new Vector2 (RB.velocity.x, 0);
-		dash = true;
-		if (onWallRight) {
-			RB.AddForce (new Vector2 (-200, jumpHeight));
-			onWallRight = false;
-		} else {
-			RB.AddForce (new Vector2 (200, jumpHeight));
-			onWallLeft = false;
-		}
-		leftRightEnabled = false;
-		wallBuffer = 2;
-		StartCoroutine (LeftRightEnabler ());
-	}
+
 
 	IEnumerator LeftRightEnabler(){
 		yield return new WaitForSeconds (.05f);
 		leftRightEnabled = true;
 	}
-	IEnumerator SwingingCooldown(){
-		swingEnabled = false;
-		yield return new WaitForSeconds (.4f);
-		swingEnabled = true;
-	}
-	void LineGraphicsUpdate(){
-		ChainHixbox.transform.localScale = new Vector3(Vector2.Distance (transform.position, swingPoint), 1 , 1);
-		ChainHixbox.transform.position = Vector3.MoveTowards (transform.position, swingPoint, Vector2.Distance (transform.position, swingPoint) / 2); 
-		Vector2 diff = transform.position - new Vector3(swingPoint.x, swingPoint.y, 0);
-		ChainHixbox.transform.rotation = Quaternion.Euler(0, 0,90 - Mathf.Atan2 (diff.x, diff.y) * Mathf.Rad2Deg);
-		LR.SetPosition (0, transform.position);
-		LR.SetPosition (1, swingPoint);
-		LR.material.mainTextureScale = new Vector2(Vector2.Distance (transform.position, swingPoint),1);
-	}
-
-	public void BreakLine( bool usePosition = false, Vector3 cutPosition = default(Vector3)){
-		if (swinging) {
-			grappleAnchor.SetActive (false);
-			ChainHixbox.SetActive (false);
-			LR.enabled = false;
-			swinging = false;
-			leftRightEnabled = true;
-
-			AnimateLineBreak (usePosition, cutPosition);
 
 
-		}
-	}
 
-	void AnimateLineBreak( bool usePosition = false, Vector3 cutPosition = default(Vector3), Vector3 newPosition = default(Vector3)){
-		if (chainAnimAllowed) {
-			chainAnimAllowed = false;
-			float x = 0;
-			Vector2 diff = transform.position - new Vector3 (swingPoint.x, swingPoint.y, 0);
-			Quaternion rot = Quaternion.Euler (0, 0, 180 - Mathf.Atan2 (diff.x, diff.y) * Mathf.Rad2Deg);
-			Rigidbody2D lastLink = null;
-			bool first = true;
-			float cutPoint = 0;
-			if (usePosition) {
-				cutPoint = Vector3.Distance (swingPoint, cutPosition);
-			}
-			float lineLength = Vector2.Distance (transform.position, swingPoint);
-			if (newPosition != Vector3.zero){
-				lineLength -= Vector2.Distance (transform.position, newPosition);
-			}
-			while (x < lineLength) {
-			
-				GameObject tmp = chainLinkPool.FetchObject ();
-				tmp.transform.position = Vector3.MoveTowards (swingPoint, transform.position, x);
-				tmp.transform.rotation = rot;
-				tmp.GetComponent<HingeJoint2D> ().connectedBody = null;
-				tmp.GetComponent<HingeJoint2D> ().enabled = true;
 
-				if (first) {
-
-					tmp.SetActive (true);
-
-					tmp.GetComponent<SelfTurnOffScript> ().StartCountdown ();
-					first = false;
-				} else if (lastLink != null) {
-					if (usePosition && Mathf.Abs (x - cutPoint) < 1f) {
-						Debug.Log ("break");
-						tmp.GetComponent<HingeJoint2D> ().enabled = false;
-						tmp.SetActive (true);
-						tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (-1f, 1f), Random.Range (1f, 3f), 0);
-					} else {
-						tmp.GetComponent<HingeJoint2D> ().connectedBody = lastLink;
-						tmp.SetActive (true);
-					}
-					tmp.GetComponent<SelfTurnOffScript> ().StartCountdown (3);
-				}
-			
-
-				//tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (-1f, 1f), Random.Range (1f, 3f), 0);
-
-				x += .5f;
-
-				lastLink = tmp.GetComponent<Rigidbody2D> ();
-
-			}
-			StartCoroutine (chainAnimTimer());
-		}
-	}
-	IEnumerator chainAnimTimer(){
-		yield return new WaitForSeconds (.1f);
-		chainAnimAllowed = true;
-	}
-	void CheckLineBreaks(){
-		Vector2 dir =  new Vector3(swingPoint.x, swingPoint.y, 1) - transform.position;
-		RaycastHit2D hit = Physics2D.Raycast (transform.position, dir, Mathf.Infinity, groundMask);
-		if (hit.point != swingPoint) {
-			AnimateLineBreak (false, Vector3.zero, hit.point);
-			swingPoint = hit.point;
-			SwingRadius = hit.distance;
-			grappleAnchor.transform.position = swingPoint;
-		}
-			
-	}
-	IEnumerator CircleAttack(){
-		canAttack = false;
-		swingEffect.transform.eulerAngles = new Vector3 (180, 0, 0);
-		swingEffect.SetActive (true);
-		float yRot = 180;
-		if (!facingRight) {
-			yRot = 0;
-		}
-		int animTimer = 0;
-		SpriteRenderer sword = swingEffect.GetComponent<SpriteRenderer> ();
-		for (int x = -45; x <= 170; x += 11) {
-			
-			yield return null;
-			if (animTimer < 5) {
-				sword.sprite = SwordAnimations [animTimer];
-			} else if (animTimer > 5 && animTimer < 15) {
-				sword.sprite = SwordAnimations [5];
-			} else if (animTimer > 10) {
-				if (16 - animTimer >= 0) {
-					sword.sprite = SwordAnimations [16 - animTimer];
-				} else {
-					sword.sprite = SwordAnimations [0];
-				}
-			}
-			animTimer++;
-			swingEffect.transform.eulerAngles = new Vector3 (180, yRot, x);
-		}
-
-		yield return null;
-		yield return null;
-		yield return null;
-		yield return null;
-
-		swingEffect.SetActive (false);
-		yield return new WaitForSeconds (.25f);
-		canAttack = true;
-	}
-
-	// function to shoot sword out
-	void SwordThrow(Vector3 direction ){
-		if (hasSword) {
-			hasSword = false;
-
-			// tmp change
-			float chargeTime = 15f;
-			StartCoroutine (SwordThrowAnim (direction, chargeTime));
-		}
-	}
-	IEnumerator SwordThrowAnim(Vector3 direction, float forceMultiplyer){
-		Debug.Log (direction + "   " + forceMultiplyer);
-		thrownSword.transform.position = transform.position;
-		thrownSword.transform.eulerAngles = new Vector3 (0, 0, Mathf.Atan2(direction.y, direction.x)*Mathf.Rad2Deg - 90);
-		thrownSword.gameObject.SetActive (true);
-		thrownSword.velocity = thrownSword.transform.up * forceMultiplyer;
-		yield return null;
-	}
-
+	// ----------------- // general and misc functions \\ ----------------- \\
 	public int GetPlayerNumber(){
 		return playerNumber;
 	}
@@ -444,12 +493,11 @@ public class PlayerControlScript : MonoBehaviour {
 	public void DisableControls(){
 		movementInputEnabled = false;
 		gameOver = true;
+		IS.GameOver ();
 		BreakLine ();
 	}
 
-	public void ReturnSword(){
-		hasSword = true;
-	}
+
 	public void SetColor(Color newColor){
 		swordColor.color = newColor;
 	}
