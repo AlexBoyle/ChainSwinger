@@ -76,4 +76,10 @@ public class RespawnScript : MonoBehaviour {
 
 
 	}
+	public void OnlineInitalSpawn(){
+		GameObject MyPlayerGO =  (GameObject)PhotonNetwork.Instantiate ("OnlinePlayerWrapper", Vector3.zero, Quaternion.identity, 0);
+		MyPlayerGO.GetComponentInChildren<PlayerControlScript> ().enabled = true;
+
+	}
+
 }
