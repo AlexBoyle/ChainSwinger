@@ -30,6 +30,7 @@ public class HealthScript : MonoBehaviour {
 				BS.EmitParticles (50);
 			}
 			SS.IncrementKill (killerPnum);
+			
 			RS.RespawnPlayer (3f,PCS.GetPlayerNumber ());
 		}
 	}
