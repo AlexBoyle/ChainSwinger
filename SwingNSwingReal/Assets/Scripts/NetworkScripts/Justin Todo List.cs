@@ -13,8 +13,7 @@ public class JustinTodoList : MonoBehaviour {
 	add respawning
 	add chain swing
 	add ghost
-	NetworkCharacter > add velocity tracking.
-
+	NetworkCharacter > add velocity tracking
 
 	*/
 	////////////////////////////////////////////////////////////////////////////////
