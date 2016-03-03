@@ -3,8 +3,8 @@ using System.Collections;
 using UnityEngine.SceneManagement;
 public class JoinGameCam : MonoBehaviour {
 	public GameObject pressA;
-	private int players = 0;
-	private int readyPlayers = 0;
+	public int players = 0;
+	public int readyPlayers = 0;
 	// Use this for initialization
 	void Start () {
 		int down = 1;
@@ -25,7 +25,7 @@ public class JoinGameCam : MonoBehaviour {
 	
 	// Update is called once per frame
 	void FixedUpdate () {
-		if (players > 0 && players == readyPlayers) {
+		if (players > 1 && players == readyPlayers) {
 			//send info to an objec that is not destroyed to move info to the next scene
 			//num of players
 			GameObject.Find("ImmortalObject").GetComponent<ImmortalObjectScript>().numPlayers(players);

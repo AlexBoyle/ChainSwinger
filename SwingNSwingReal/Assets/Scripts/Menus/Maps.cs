@@ -49,7 +49,7 @@ public class Maps : MonoBehaviour {
 		{
 			List<int> mapToPlay = new List<int>();
 			int level = 0;
-			mapToPlay.Add (-1);
+
 			//check the votes for each level
 			for (int i = 0; i < mapVotes.Length; i++) {
 				if (mapVotes [i] == mapVotes [level]) {
@@ -61,14 +61,14 @@ public class Maps : MonoBehaviour {
 					mapToPlay.Add (i);
 				}
 			}
-			Debug.Log (mapToPlay.Count);
+			for(int i = 0; i < mapToPlay.Count; i ++)
+			Debug.Log (mapToPlay[i]);
 			//pick level
-			if (mapToPlay.Count <= 1) {
-				SceneManager.LoadScene(mapToPlay [0] + SceneManager.GetActiveScene().buildIndex +1);
-			} else {
-				Random.seed = System.DateTime.Now.Millisecond;
-				SceneManager.LoadScene(mapToPlay[(int)(Random.value * 100) %mapToPlay.Count] + SceneManager.GetActiveScene().buildIndex + 1);
-			}
+			Random.seed = System.DateTime.Now.Millisecond;
+			int temp = mapToPlay [(int)(Random.value * 100) % mapToPlay.Count] + SceneManager.GetActiveScene ().buildIndex +1;
+			Debug.Log (temp);
+			SceneManager.LoadScene(temp);
+
 		}
 	}
 	public int getWidth()
