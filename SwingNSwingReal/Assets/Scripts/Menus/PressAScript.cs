@@ -4,7 +4,9 @@ using XInputDotNetPure;
 public class PressAScript : MonoBehaviour {
 	public int playerNumber;
 	private PlayerIndex playerIndex;
+
 	private GamePadState state;
+	private GamePadState pre;
 	private JoinGameCam cam;
 	private bool playerjoin = false;
 	private bool playerReady = false;
@@ -23,7 +25,7 @@ public class PressAScript : MonoBehaviour {
 			cam.playerJoin ();
 			playerjoin = true;
 		}
-		if (playerjoin && state.Buttons.Start == ButtonState.Pressed) {
+		if (playerjoin && state.Buttons.Start == ButtonState.Pressed && !playerReady) {
 			gameObject.GetComponent<SpriteRenderer> ().color = Color.green;
 			cam.playerReady ();
 			playerReady = true;
@@ -45,6 +47,7 @@ public class PressAScript : MonoBehaviour {
 				}
 			}
 		}
+		pre = state;
 	}
 	public void setPlayerNumber(int a){
 		playerNumber = a;
