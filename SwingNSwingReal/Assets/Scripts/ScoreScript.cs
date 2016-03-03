@@ -28,12 +28,12 @@ public class ScoreScript : MonoBehaviour {
 	}
 	public void IncrementKill(int playerNumber){
 
+
 		if (noWinners && playerNumber >= 0) {
 			playerKills [playerNumber]++;
 			StartCoroutine (LerpBar ());
 			CheckWin ();
 		}
-
 	}
 	void CheckWin(){
 		for (int x = 0; x < 4; x++) {
