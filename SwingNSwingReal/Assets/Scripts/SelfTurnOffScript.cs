@@ -78,7 +78,7 @@ public class SelfTurnOffScript : MonoBehaviour {
 		} else if (sinkIntoGround) {
 			PC.enabled = false;
 			RB.gravityScale = .05f;
-			RB.velocity = Vector3.zero;
+			//RB.velocity = Vector3.zero;
 			yield return new WaitForSeconds (1f);
 		}
 

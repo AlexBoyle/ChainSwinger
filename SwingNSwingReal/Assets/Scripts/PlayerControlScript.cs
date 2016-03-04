@@ -15,6 +15,7 @@ public class PlayerControlScript : MonoBehaviour {
 	ScoreScript SS;
 	public Sprite[] SwordAnimations;
 	InputScript IS;
+	public float platformSpeed;
 
 	public ObjectPoolScript chainLinkPool;
 
@@ -63,6 +64,12 @@ public class PlayerControlScript : MonoBehaviour {
 
 			// do a check for ground
 			RaycastHit2D groundCheck = Physics2D.Raycast (transform.position, Vector2.down, .35f, groundMask);
+			if (groundCheck.collider != null && groundCheck.collider.tag == "MovingPlatform"){
+				Debug.Log ("ding");
+				platformSpeed = groundCheck.collider.GetComponent<Rigidbody2D> ().velocity.x;	
+			}else{
+				platformSpeed = 0;
+			}
 			if (groundCheck.collider != null && groundedBuffer <= 0) {
 				grounded = true;
 				doubleJump = true;
@@ -120,6 +127,8 @@ public class PlayerControlScript : MonoBehaviour {
 			swingPoint = grappleAnchor.transform.position;
 			CheckLineBreaks ();
 
+
+			ReelInChain ();
 			LineGraphicsUpdate ();
 			if (Vector2.Distance (transform.position, swingPoint) > SwingRadius) {
 
@@ -140,8 +149,8 @@ public class PlayerControlScript : MonoBehaviour {
 	public void ReelInChain(){
 		if (swinging) {
 			// reel in line
-			if (SwingRadius > 1 && !BlockReelIn) {
-				SwingRadius -= .1f;
+			if (SwingRadius > 2 && !BlockReelIn) {
+				SwingRadius -= .05f;
 			}
 		}
 	}
@@ -439,7 +448,7 @@ public class PlayerControlScript : MonoBehaviour {
 
 
 			if (((RB.velocity.x <= xStick * groundSpeed) && (xStick > 0) || (RB.velocity.x >= xStick * groundSpeed) && (xStick < 0)) || grounded) {
-				RB.velocity = new Vector3 (xStick * groundSpeed, RB.velocity.y, 0);
+				RB.velocity = new Vector3 ((xStick * groundSpeed) + platformSpeed, RB.velocity.y, 0);
 			}
 
 
