@@ -34,11 +34,13 @@ public class SwingHitboxScript : MonoBehaviour {
 			} else if (ableToBePickedUp && otherPnum == pNum){
 				other.GetComponent<PlayerControlScript> ().ReturnSword();
 				transform.parent.parent.gameObject.SetActive (false);
+				returnSword ();
 			}
 		}else if (other.tag == "Ghost") {
 			Debug.Log ("swrod");
 			if (other.GetComponent<GhostControl> ().GetPlayerNumber () == pNum && pNum ==  damagePNum){
 				other.GetComponent<GhostControl>().ReturnSword();
+				returnSword();
 				transform.parent.parent.gameObject.SetActive (false);
 			}
 		}else if (other.tag == "ThrownSword"){
@@ -48,7 +50,14 @@ public class SwingHitboxScript : MonoBehaviour {
 
 		}
 	}
-
+	void OnDisable(){
+		returnSword ();
+	}
+	void returnSword(){
+		StopAllCoroutines ();
+		swordSprite.color = Color.white;
+		damagePNum = pNum;
+	}
 	public void KnockAway(Vector3 pos, int newPNum){
 		Vector3 newDir = Vector3.zero;
 		if (pos.x > transform.position.x) {

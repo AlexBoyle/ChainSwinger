@@ -53,6 +53,8 @@ public class PlayerControlScript : MonoBehaviour {
 		swingEnabled = true;
 		chainAnimAllowed = true;
 		isChargingThrow = false;
+		fullyCharged = false;
+		chargeSprite.SetActive (false);
 		canAttack = true;
 
 	}
