@@ -55,7 +55,7 @@ public class InputScript : MonoBehaviour {
 			}
 			// trigger press
 			if (state.Triggers.Left > .5f) {
-				PCS.ReelInChain ();
+				//PCS.ReelInChain ();
 			}
 		}
 
