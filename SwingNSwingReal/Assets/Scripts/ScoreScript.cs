@@ -45,13 +45,13 @@ public class ScoreScript : MonoBehaviour {
 				}
 				x++;
 				winText.text = "Player " + x  + " Wins";
-				Invoke ("ReloadLevel", 5f);
+				Invoke ("LevelSelect", 5f);
 
 			}
 		}
 	}
-	void ReloadLevel(){
-		UnityEngine.SceneManagement.SceneManager.LoadScene (UnityEngine.SceneManagement.SceneManager.GetActiveScene ().buildIndex);
+	void LevelSelect(){
+		UnityEngine.SceneManagement.SceneManager.LoadScene (1);
 	}
 	IEnumerator LerpBar(){
 		while (scoreBar[0].fillAmount  < playerKills[0]/killsToWin || scoreBar[1].fillAmount  < playerKills[1]/killsToWin || scoreBar[2].fillAmount  < playerKills[2]/killsToWin || scoreBar[3].fillAmount  < playerKills[3]/killsToWin){
