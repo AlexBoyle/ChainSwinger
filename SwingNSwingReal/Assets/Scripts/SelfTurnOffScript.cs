@@ -11,13 +11,13 @@ public class SelfTurnOffScript : MonoBehaviour {
 	// only works with polygon colliders
 	public bool sinkIntoGround;
 	Rigidbody2D RB;
-	PolygonCollider2D PC;
+	BoxCollider2D PC;
 	Vector3 scale;
 	// Use this for initialization
 	void Start () {
 		if (sinkIntoGround) {
 			RB = GetComponent<Rigidbody2D> ();
-			PC = GetComponent<PolygonCollider2D> ();
+			PC = GetComponent<BoxCollider2D> ();
 		}
 		if (shrink) {
 			scale = transform.localScale;
@@ -42,7 +42,7 @@ public class SelfTurnOffScript : MonoBehaviour {
 			}
 			RB.gravityScale = 1;
 			if (PC == null) {
-				PC = GetComponent<PolygonCollider2D> ();
+				PC = GetComponent<BoxCollider2D> ();
 			}
 			PC.enabled = true;
 		}

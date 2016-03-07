@@ -30,11 +30,11 @@ public class InputScript : MonoBehaviour {
 			}
 
 			// Detect if a button was pressed this frame
-			if (prevState.Buttons.RightShoulder == ButtonState.Released && state.Buttons.RightShoulder == ButtonState.Pressed) {
+			if (prevState.Buttons.LeftShoulder == ButtonState.Released && state.Buttons.LeftShoulder == ButtonState.Pressed) {
 				PCS.SwordThrowPress ();	
 			}
 			// Detect if a button was released this frame
-			if (prevState.Buttons.RightShoulder == ButtonState.Pressed && state.Buttons.RightShoulder == ButtonState.Released) {
+			if (prevState.Buttons.LeftShoulder == ButtonState.Pressed && state.Buttons.LeftShoulder == ButtonState.Released) {
 				PCS.SwordThrowRelease ();
 			}
 			// x button press
@@ -42,7 +42,7 @@ public class InputScript : MonoBehaviour {
 				PCS.StartSwingAttack ();
 			}
 			// y held
-			if (state.Buttons.RightShoulder == ButtonState.Pressed) {
+			if (state.Buttons.LeftShoulder == ButtonState.Pressed) {
 				PCS.SwordThrowHold ();
 			}
 			// trigger press

@@ -252,7 +252,7 @@ public class PlayerControlScript : MonoBehaviour {
 
 				//tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (-1f, 1f), Random.Range (1f, 3f), 0);
 
-				x += .5f;
+				x += .9f;
 
 				lastLink = tmp.GetComponent<Rigidbody2D> ();
 

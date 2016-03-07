@@ -8,11 +8,14 @@ public class ParticleEmitterScript : MonoBehaviour {
 
 	public bool onEnableShootParticles = false;
 	public bool loopParticles = false;
+	public float particleLifetime = 1;
 	public int emitAmount;
 	public float emitDuration;
+
+	public bool useInitialBurst = false;
+	public int initialBurstAmount = 0;
+
 	// spawn locaiton variable
-
-
 	public bool useRandomPosition;
 	public Vector3 positionMin, positionMax;
 	
@@ -28,15 +31,19 @@ public class ParticleEmitterScript : MonoBehaviour {
 	// scale variables
 	public bool useRandomScale = false;
 	public Vector3 scaleMin, scaleMax;
+	public bool useScaleOverTime = false;
+	public Vector3 scaleModifier = Vector3.zero;
 
 	// color variables
 	public bool useRandomColor;
 	public Color rColor1, rColor2;
 
+	public bool useSimulatedGravity = false;
+	public float gravitySpeed = 0;
 
 
-	public bool useInitialBurst = false;
-	public int initialBurstAmount = 0;
+
+
 	// Use this for initialization
 	void Awake () {
 		particlePool=  GetComponent<ObjectPoolScript> ();
@@ -81,8 +88,8 @@ public class ParticleEmitterScript : MonoBehaviour {
 	// continuously emit particles
 	IEnumerator EmitLoop(float particlesPerSecond){		
 		while (true) {
-			EmitSingleParticle ();
-			yield return new WaitForSeconds(particlesPerSecond);
+			EmitParticles (emitAmount, emitDuration);
+			yield return new WaitForSeconds(emitDuration);
 		}
 	}
 
@@ -127,7 +134,7 @@ public class ParticleEmitterScript : MonoBehaviour {
 	void EmitSingleParticle(float forceRatio = 1, float scaleRatio = 1){
 		// get particle from pool
 		GameObject tmp =  particlePool.FetchObject ();
-
+		Color tmpC = Color.white;
 		// put particle on systems position or in a random area around it
 		if (useRandomPosition) {
 			Vector3 tmpPos =transform.position;
@@ -145,21 +152,33 @@ public class ParticleEmitterScript : MonoBehaviour {
 
 		// handle color
 		if (useRandomColor) {
-			tmp.GetComponent<SpriteRenderer> ().color = RandomBetweenTwoColors ();
+			tmpC = RandomBetweenTwoColors ();
 		}
 
 		// handle scale
 		if (useRandomScale) {
 			tmp.transform.localScale = new Vector3 (Random.Range (scaleMin.x * scaleRatio, scaleMax.x * scaleRatio), Random.Range (scaleMin.y * scaleRatio, scaleMax.y * scaleRatio), 1);
+		} else {
+			tmp.transform.localScale = Vector3.one;
 		}
 
 		// set object active
 		tmp.SetActive (true);
 
 		// handle particle forces
+		Vector3 tmpForce = Vector3.zero;
 		if (useForces) {
-			tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (forceMin.x * forceRatio, forceMax.x * forceRatio), Random.Range (forceMin.y * forceRatio, forceMax.y * forceRatio), 0);
+			if (tmp.GetComponent<Rigidbody2D> () != null) {
+				tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (forceMin.x * forceRatio, forceMax.x * forceRatio), Random.Range (forceMin.y * forceRatio, forceMax.y * forceRatio), 0);
+			} else {
+				tmpForce = new Vector3 (Random.Range (forceMin.x * forceRatio, forceMax.x * forceRatio), Random.Range (forceMin.y * forceRatio, forceMax.y * forceRatio), 0);
+			}
+				
 		}
+		if (tmp.GetComponent<ParticleScript> () != null) {
+			tmp.GetComponent<ParticleScript> ().InitialSetup (particleLifetime, tmpForce, tmpC, useScaleOverTime, scaleModifier, useSimulatedGravity, gravitySpeed);
+		}
+		
 	}
 
 	// ------------------- misc ---------------------
