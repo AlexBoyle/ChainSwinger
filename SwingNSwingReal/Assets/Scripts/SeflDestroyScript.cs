@@ -5,7 +5,7 @@ public class SeflDestroyScript : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		Invoke ("DestroySelf", 3f);
+		Invoke ("DestroySelf", 5f);
 	}
 	void DestroySelf(){
 		Destroy (gameObject);

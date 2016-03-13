@@ -88,7 +88,6 @@ public class ScoreScript : MonoBehaviour {
 				}
 			}
 			yield return new WaitForSeconds(.015f);
-			Debug.Log ("FILLING");
 		}
 	}
 }

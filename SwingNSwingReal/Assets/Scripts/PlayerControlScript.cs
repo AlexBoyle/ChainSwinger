@@ -230,6 +230,7 @@ public class PlayerControlScript : MonoBehaviour {
 
 				GameObject tmp = chainLinkPool.FetchObject ();
 				tmp.transform.position = Vector3.MoveTowards (swingPoint, transform.position, x);
+				tmp.transform.position = new Vector3 (tmp.transform.position.x, tmp.transform.position.y, 10);
 				tmp.transform.rotation = rot;
 				if (!useLightweightLink) {
 
@@ -265,7 +266,7 @@ public class PlayerControlScript : MonoBehaviour {
 					tmp.SetActive (true);
 					tmp.GetComponent<ParticleScript> ().InitialSetup (2f, new Vector3(Random.Range (-.01f, .01f),0, 0), Color.white, false, Vector3.zero, true, .01f);
 
-					x += .3f;
+					x += .5f;
 				}
 
 			}
