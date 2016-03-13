@@ -14,6 +14,6 @@ public class ChainDestructionScript : MonoBehaviour {
 	
 	}
 	public void DestroyChain(Vector3 cutPosition ){
-		PCS.BreakLine (true, cutPosition);
+		PCS.BreakLine (false ,true, cutPosition);
 	}
 }

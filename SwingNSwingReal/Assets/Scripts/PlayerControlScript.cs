@@ -8,7 +8,7 @@ public class PlayerControlScript : MonoBehaviour {
 	public GameObject ghost, grappleAnchor, ChainHixbox, swingEffect, chargeSprite, chargeParticles;
 	public Rigidbody2D thrownSword;
 	public int playerNumber;
-	public bool BlockReelIn = false;
+	public bool BlockReelIn = false, useLightweightLink = true;
 	float xStick, yStick, deadSize = .25f;
 	bool movementInputEnabled = true, doubleJump = false, grounded = false, onWallRight = false, onWallLeft = false, leftRightEnabled = true, swinging = false, facingRight, dash = false, 
 	canAttack = true, swingEnabled = true, gameOver = false, chainAnimAllowed = true, hasSword = true, isChargingThrow = false, fullyCharged = false;
@@ -16,6 +16,7 @@ public class PlayerControlScript : MonoBehaviour {
 	public Sprite[] SwordAnimations;
 	InputScript IS;
 	public float platformSpeed;
+	SoundPlayerScript SPS;
 
 	public ObjectPoolScript chainLinkPool;
 
@@ -27,11 +28,12 @@ public class PlayerControlScript : MonoBehaviour {
 	public LineRenderer LR;
 	public SpriteRenderer swordColor;
 	SpriteRenderer SR;
+	public ParticleEmitterScript PES;
 	//ObjectPoolScript SwingEffectPool;
 
 
 	// Use this for initializationswing
-	void Start () {
+	void Awake () {
 		groundMask = 1 << 8;
 		playerGroundMask = 1 << 9; // maybe nine maybe just a number
 
@@ -39,7 +41,7 @@ public class PlayerControlScript : MonoBehaviour {
 		SR = GetComponent<SpriteRenderer> ();
 		SS = GameObject.Find ("ScoreObject").GetComponent<ScoreScript>();
 		SS.AddPlayer (gameObject);
-
+		SPS = GameObject.Find ("SoundObject").GetComponent<SoundPlayerScript> ();
 		//SwingEffectPool = GameObject.Find ("LinePooler").GetComponent<ObjectPoolScript> ();
 	}
 
@@ -75,7 +77,6 @@ public class PlayerControlScript : MonoBehaviour {
 			if (groundCheck.collider != null && groundedBuffer <= 0) {
 				grounded = true;
 				doubleJump = true;
-				dash = true;
 			} else if (groundCheck.collider == null) {
 				grounded = false;
 			} else if (groundedBuffer > 0) {
@@ -179,6 +180,7 @@ public class PlayerControlScript : MonoBehaviour {
 			swinging = true;
 			leftRightEnabled = false;
 			LineGraphicsUpdate ();
+			SPS.PlayChainAttach ();
 			//UpdateChain (true);
 		}
 	}
@@ -192,7 +194,7 @@ public class PlayerControlScript : MonoBehaviour {
 		LR.material.mainTextureScale = new Vector2(Vector2.Distance (transform.position, swingPoint),1);
 	}
 
-	public void BreakLine( bool usePosition = false, Vector3 cutPosition = default(Vector3)){
+	public void BreakLine(bool forceAnimation = false,  bool usePosition = false, Vector3 cutPosition = default(Vector3)){
 		if (swinging) {
 			grappleAnchor.SetActive (false);
 			ChainHixbox.SetActive (false);
@@ -200,14 +202,16 @@ public class PlayerControlScript : MonoBehaviour {
 			swinging = false;
 			leftRightEnabled = true;
 			grappleAnchor.transform.parent = null;
-			AnimateLineBreak (usePosition, cutPosition);
-
-
+			if (usePosition) {
+				SPS.PlayChainBreak ();
+			}
+			AnimateLineBreak (forceAnimation ,usePosition, cutPosition);
 		}
 	}
 
-	void AnimateLineBreak( bool usePosition = false, Vector3 cutPosition = default(Vector3), Vector3 newPosition = default(Vector3)){
-		if (chainAnimAllowed) {
+	void AnimateLineBreak( bool forceAnimation = false, bool usePosition = false, Vector3 cutPosition = default(Vector3), Vector3 newPosition = default(Vector3)){
+		if (chainAnimAllowed || forceAnimation) {
+			SPS.PlayChainBreak ();
 			chainAnimAllowed = false;
 			float x = 0;
 			Vector2 diff = transform.position - new Vector3 (swingPoint.x, swingPoint.y, 0);
@@ -227,34 +231,42 @@ public class PlayerControlScript : MonoBehaviour {
 				GameObject tmp = chainLinkPool.FetchObject ();
 				tmp.transform.position = Vector3.MoveTowards (swingPoint, transform.position, x);
 				tmp.transform.rotation = rot;
-				tmp.GetComponent<HingeJoint2D> ().connectedBody = null;
-				tmp.GetComponent<HingeJoint2D> ().enabled = true;
+				if (!useLightweightLink) {
 
-				if (first) {
+					tmp.GetComponent<HingeJoint2D> ().connectedBody = null;
+					tmp.GetComponent<HingeJoint2D> ().enabled = true;
 
-					tmp.SetActive (true);
+					if (first) {
 
-					tmp.GetComponent<SelfTurnOffScript> ().StartCountdown ();
-					first = false;
-				} else if (lastLink != null) {
-					if (usePosition && Mathf.Abs (x - cutPoint) < 1f) {
-						Debug.Log ("break");
-						tmp.GetComponent<HingeJoint2D> ().enabled = false;
 						tmp.SetActive (true);
-						tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (-1f, 1f), Random.Range (1f, 3f), 0);
-					} else {
-						tmp.GetComponent<HingeJoint2D> ().connectedBody = lastLink;
-						tmp.SetActive (true);
+
+						tmp.GetComponent<SelfTurnOffScript> ().StartCountdown ();
+						first = false;
+					} else if (lastLink != null) {
+						if (usePosition && Mathf.Abs (x - cutPoint) < 1f) {
+							Debug.Log ("break");
+							tmp.GetComponent<HingeJoint2D> ().enabled = false;
+							tmp.SetActive (true);
+							tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (-1f, 1f), Random.Range (1f, 3f), 0);
+						} else {
+							tmp.GetComponent<HingeJoint2D> ().connectedBody = lastLink;
+							tmp.SetActive (true);
+						}
+						tmp.GetComponent<SelfTurnOffScript> ().StartCountdown (3);
 					}
-					tmp.GetComponent<SelfTurnOffScript> ().StartCountdown (3);
+
+
+					//tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (-1f, 1f), Random.Range (1f, 3f), 0);
+
+					x += .9f;
+
+					lastLink = tmp.GetComponent<Rigidbody2D> ();
+				} else {
+					tmp.SetActive (true);
+					tmp.GetComponent<ParticleScript> ().InitialSetup (2f, new Vector3(Random.Range (-.01f, .01f),0, 0), Color.white, false, Vector3.zero, true, .01f);
+
+					x += .3f;
 				}
-
-
-				//tmp.GetComponent<Rigidbody2D> ().velocity = new Vector3 (Random.Range (-1f, 1f), Random.Range (1f, 3f), 0);
-
-				x += .9f;
-
-				lastLink = tmp.GetComponent<Rigidbody2D> ();
 
 			}
 			StartCoroutine (chainAnimTimer());
@@ -268,7 +280,7 @@ public class PlayerControlScript : MonoBehaviour {
 		Vector2 dir =  new Vector3(swingPoint.x, swingPoint.y, 1) - transform.position;
 		RaycastHit2D hit = Physics2D.Raycast (transform.position, dir, Mathf.Infinity, groundMask);
 		if (hit.point != swingPoint) {
-			AnimateLineBreak (false, Vector3.zero, hit.point);
+			AnimateLineBreak (false, false, Vector3.zero, hit.point);
 			grappleAnchor.transform.parent = hit.collider.gameObject.transform;
 			swingPoint = hit.point;
 			SwingRadius = hit.distance;
@@ -285,14 +297,21 @@ public class PlayerControlScript : MonoBehaviour {
 			grounded = false;
 			groundedBuffer = 1;
 			wallBuffer = 10;
+			SPS.PlayJump ();
+			PES.EmitBurst (10);
 		} else if (onWallLeft || onWallRight) {
 			WallJump ();
+			PES.EmitBurst (10);
+			SPS.PlayJump ();
 		} else if (doubleJump) {
 			BreakLine ();
 			RB.velocity = new Vector2 (RB.velocity.x, 0);
 			RB.AddForce (new Vector2 (0, jumpHeight));
 			doubleJump = false;
+			PES.EmitBurst (10);
+			SPS.PlayJump ();
 		}
+
 	}
 	void WallJump(){
 		RB.velocity = new Vector2 (RB.velocity.x, 0);
@@ -316,13 +335,15 @@ public class PlayerControlScript : MonoBehaviour {
 			//leftRightEnabled = false;
 			chargeSprite.SetActive(true);
 			isChargingThrow = true;
+			SPS.PlaySwordBringOut ();
 		}
 	}
 
 	public void SwordThrowHold(){
 		if (isChargingThrow) {
-			if ((Time.time - throwTimerStart) > .5f) {
+			if ((Time.time - throwTimerStart) > .5f && !fullyCharged) {
 				fullyCharged = true;
+				SPS.PlaySwordFullyCharged();
 				chargeParticles.SetActive (true);
 			}
 		}
@@ -333,6 +354,8 @@ public class PlayerControlScript : MonoBehaviour {
 				SwordThrow (swordThrowAngle);
 
 				fullyCharged = false;
+			} else {
+				SPS.PlaySwordPutAway ();
 			}
 			//throwTimerStart = Time.time;
 			//leftRightEnabled = false;
@@ -354,6 +377,7 @@ public class PlayerControlScript : MonoBehaviour {
 	}
 	IEnumerator SwordThrowAnim(Vector3 direction, float forceMultiplyer){
 		Debug.Log (direction + "   " + forceMultiplyer);
+		SPS.PlaySwordThrow ();
 		thrownSword.transform.position = transform.position;
 		thrownSword.transform.eulerAngles = new Vector3 (0, 0, Mathf.Atan2(direction.y, direction.x)*Mathf.Rad2Deg - 90);
 		thrownSword.gameObject.SetActive (true);
@@ -362,18 +386,20 @@ public class PlayerControlScript : MonoBehaviour {
 	}
 	public void ReturnSword(){
 		hasSword = true;
+		SPS.PlaySwordPickUp ();
 	}
 	// ----------------- // section of controls for doing regular attacks \\ ----------------- \\
 
 
 	// attack wrapper
 	public void StartSwingAttack(){
-		if (dash && canAttack && !isChargingThrow && hasSword){
+		if ( canAttack && !isChargingThrow && hasSword){
 			StartCoroutine (CircleAttack ());
 		}
 	}
 	IEnumerator CircleAttack(){
 		canAttack = false;
+		SPS.PlaySwordAttack ();
 		swingEffect.transform.eulerAngles = new Vector3 (180, 0, 0);
 		swingEffect.SetActive (true);
 		float yRot = 180;

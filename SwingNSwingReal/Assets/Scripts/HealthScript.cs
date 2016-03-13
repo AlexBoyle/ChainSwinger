@@ -8,7 +8,7 @@ public class HealthScript : MonoBehaviour {
 	public ParticleEmitterScript BS;
 	ScoreScript SS;
 	// Use this for initialization
-	void Start () {
+	void Awake () {
 		RS = GameObject.Find ("RespawnObject").GetComponent<RespawnScript>();
 		PCS = GetComponent<PlayerControlScript> ();
 		SS = GameObject.Find ("ScoreObject").GetComponent<ScoreScript>();
@@ -26,10 +26,15 @@ public class HealthScript : MonoBehaviour {
 			Debug.Log(tipKill);
 			if (tipKill) {
 				BS.EmitParticles (125, 1, 2f, 1.5f);
-			} else {
+			} else if (killerPnum != -2){
 				BS.EmitParticles (50);
 			}
-			SS.IncrementKill (killerPnum);
+			if (killerPnum == -1) {
+				// suicice
+				SS.DecrementKills(PCS.GetPlayerNumber());
+			} else {
+				SS.IncrementKill (killerPnum);
+			}
 			RS.RespawnPlayer (3f,PCS.GetPlayerNumber ());
 		}
 	}

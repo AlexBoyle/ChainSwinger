@@ -9,6 +9,7 @@ public class SwingHitboxScript : MonoBehaviour {
 	bool ableToBePickedUp = false;
 	public float timeTillDeactivate;
 	public int pNum, damagePNum;
+	public SwingHitboxScript otherHitbox;
 	// Use this for initialization
 	void Awake () {
 		pNum = Owner.GetComponent<PlayerControlScript> ().GetPlayerNumber (); 
@@ -72,6 +73,10 @@ public class SwingHitboxScript : MonoBehaviour {
 			newDir.y = 10;
 		}
 		RB.velocity = newDir;
+		StartCoroutine (SwordRepel(newPNum));
+		otherHitbox.swordRepelWrapper (newPNum);
+	}
+	public void swordRepelWrapper(int newPNum){
 		StartCoroutine (SwordRepel(newPNum));
 	}
 	IEnumerator SwordRepel(int newPNum){

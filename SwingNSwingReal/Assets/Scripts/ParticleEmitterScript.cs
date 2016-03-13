@@ -35,7 +35,7 @@ public class ParticleEmitterScript : MonoBehaviour {
 	public Vector3 scaleModifier = Vector3.zero;
 
 	// color variables
-	public bool useRandomColor;
+	public bool useRandomColor, greyScale;
 	public Color rColor1, rColor2;
 
 	public bool useSimulatedGravity = false;
@@ -185,25 +185,31 @@ public class ParticleEmitterScript : MonoBehaviour {
 	// uses rcolor1 and 2 and randoms a new color betweent them
 	Color RandomBetweenTwoColors(){
 		Color randomColor;
-		// handle red 
-		if (rColor1.r > rColor2.r) {
-			randomColor.r = Random.Range (rColor2.r, rColor1.r);
+		if (greyScale) {
+			float rnd = Random.Range(rColor1.r, rColor2.r);
+			randomColor.r = rnd;
+			randomColor.g = rnd;
+			randomColor.b = rnd;
 		} else {
-			randomColor.r = Random.Range (rColor1.r, rColor2.r);
+			// handle red 
+			if (rColor1.r > rColor2.r) {
+				randomColor.r = Random.Range (rColor2.r, rColor1.r);
+			} else {
+				randomColor.r = Random.Range (rColor1.r, rColor2.r);
+			}
+			// handle green 
+			if (rColor1.r > rColor2.r) {
+				randomColor.g = Random.Range (rColor2.g, rColor1.g);
+			} else {
+				randomColor.g = Random.Range (rColor1.g, rColor2.g);
+			}
+			// handle blue 
+			if (rColor1.r > rColor2.r) {
+				randomColor.b = Random.Range (rColor2.b, rColor1.b);
+			} else {
+				randomColor.b = Random.Range (rColor1.b, rColor2.b);
+			}
 		}
-		// handle green 
-		if (rColor1.r > rColor2.r) {
-			randomColor.g = Random.Range (rColor2.g, rColor1.g);
-		} else {
-			randomColor.g = Random.Range (rColor1.g, rColor2.g);
-		}
-		// handle blue 
-		if (rColor1.r > rColor2.r) {
-			randomColor.b = Random.Range (rColor2.b, rColor1.b);
-		} else {
-			randomColor.b = Random.Range (rColor1.b, rColor2.b);
-		}
-
 		randomColor.a = 1;
 		return randomColor;
 	}

@@ -12,7 +12,7 @@ public class CameraFollowScript : MonoBehaviour {
 	float cameraToUnits = 1.778114f;
 	float lerpFactor = .025f;
 
-	int numberOfPlayers = 0;
+	int numberOfPlayers = 0, introBuff = 60;
 
 	public float topBound;
 	public float leftBound;
@@ -20,20 +20,37 @@ public class CameraFollowScript : MonoBehaviour {
 	public float bottomBound;
 	public float cameraMaxSize;
 	public float cameraMinSize;
+	public bool begining = true;
 	// Use this for initialization
 	void Start () {
 		players = new Transform[4];
 		playerGhosts = new Transform[4];
 		mainCamera = GetComponent<Camera> ();
+		if (begining){
+			transform.position = new Vector3 (-30, 3.5f, -10);
+			mainCamera.orthographicSize = 8.5f;
+		}
 	}
 	
 	// Update is called once per frame
 	void FixedUpdate () {
-		if (numberOfPlayers == 2) {
-			adjustCamera ();
+		if (begining) {
+			if (introBuff > 0) {
+				introBuff--;
+			} else {
+				transform.position = Vector3.Lerp (transform.position, new Vector3 (0, 3.5f, -10), .03f);
+				if (transform.position.x > -.1f) {
+					transform.position = new Vector3 (0, 3.5f, -10);
+					begining = false;
+				}
+			}
 		} else {
-			mainCamera.orthographicSize = cameraMaxSize;
-			mainCamera.transform.position = new Vector3 (0, 3.5f, -100);
+			if (numberOfPlayers == 2) {
+				adjustCamera ();
+			} else {
+				mainCamera.orthographicSize = cameraMaxSize;
+				mainCamera.transform.position = new Vector3 (0, 3.5f, -100);
+			}
 		}
 	}
 	void adjustCamera(){
@@ -42,7 +59,7 @@ public class CameraFollowScript : MonoBehaviour {
 			p1Pos = playerGhosts [0].position;
 		}
 		if (!players [1].gameObject.activeSelf) {
-			p1Pos = playerGhosts [1].position;
+			p2Pos = playerGhosts [1].position;
 		}
 		float currentDistance = Vector3.Distance (p1Pos, p2Pos);
 

@@ -51,7 +51,7 @@ public class InputScript : MonoBehaviour {
 			}
 			// trigger release
 			if (prevState.Triggers.Right > .5f && state.Triggers.Right <= .5f) {
-				PCS.BreakLine ();
+				PCS.BreakLine (true);
 			}
 			// trigger press
 			if (state.Triggers.Left > .5f) {
