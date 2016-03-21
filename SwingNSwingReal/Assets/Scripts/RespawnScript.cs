@@ -56,7 +56,7 @@ public class RespawnScript : MonoBehaviour {
 		players [playerNum].GetComponentInChildren<HealthScript> ().FillHealth (100);
 	}
 
-	void InitialSpawn(int playerNumber){
+	public void InitialSpawn(int playerNumber){
 		GameObject tmp =  Instantiate (playerPrefab, Vector3.zero, Quaternion.identity) as GameObject;
 		Color tcolor;
 		tmp.GetComponentInChildren<PlayerControlScript> ().playerNumber = playerNumber;

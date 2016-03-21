@@ -10,7 +10,7 @@ public class Maps : MonoBehaviour {
 	public int rows = 2;
 	public GameObject[] mapImages;
 	public int numPlayers = 4;
-	private int votes = 0;
+	public int votes = 0;
 	private int width;
 	private int height;
 	public float disX = 4f;
