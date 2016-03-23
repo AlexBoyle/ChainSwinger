@@ -9,7 +9,7 @@ public class KillOnTouchScript : MonoBehaviour {
 
 		if (other.tag == "Player" && On) {
 			
-			other.GetComponent<HealthScript> ().DealDamage (100, -1, true);
+			other.GetComponent<HealthScript> ().DealDamage (100, -1, false);
 		}
 	}
 }
