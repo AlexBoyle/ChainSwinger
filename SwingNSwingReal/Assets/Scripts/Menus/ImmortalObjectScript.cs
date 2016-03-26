@@ -8,15 +8,20 @@ public class ImmortalObjectScript : MonoBehaviour {
 	private float temp;
 	private GamePadState state;
 	/// ////
-
+	/// 
+	/// 
+	private bool[] players = {false,false,false,false};
+	private bool spawn = false;
+	private  int curlvl = 0;
 	private int startLevel = 0;
-	public int numPlayer = 0;
+	private int count = 0;
+
 	private bool isPaused = false;
 	public GameObject pauseMenu; 
 	private GameObject visPauseMenu;
 	bool boop = true;
 	public GameObject[] Buttons;
-	private CameraFollowScript CFS;
+
 	public int BuildIndex = 1;
 	private int pausePlayer = -1;
 	// Use this for initialization
@@ -27,29 +32,26 @@ public class ImmortalObjectScript : MonoBehaviour {
 	}
 	// Update is called once per frame
 	void OnLevelWasLoaded(int level) {
-		
+		curlvl = level;
 		visPauseMenu = Instantiate (pauseMenu,Vector3.zero,Quaternion.identity) as GameObject;
 		visPauseMenu.transform.position = Vector3.zero;
 		visPauseMenu.SetActive (false);
-		pauseGame (0);
+
 		//visPauseMenu.SetActive (false);
 		if (level == BuildIndex)
-			GameObject.Find ("Main Camera").GetComponent<Maps> ().addPlayers (numPlayer);
+			GameObject.Find ("Main Camera").GetComponent<Maps> ().addPlayers (players);
 		else if (level > BuildIndex) {
-			RespawnScript a = GameObject.Find ("RespawnObject").GetComponent<RespawnScript> ();
-			CFS = GameObject.Find ("Main Camera").GetComponent<CameraFollowScript>();
-			for (int i = 0; i < numPlayer ; i++) {
-				a.InitialSpawn (i);
-			}
-
+			spawn = true;
+			count = 0;
 		}
 
 	}
-	public void numPlayers(int a){
-		numPlayer = a;
+	public void numPlayers(bool[] a){
+		players = a;
 	}
 
 	public void pauseGame(int player){
+		if(curlvl > BuildIndex)	
 		if (!isPaused) {
 			Debug.Log ("here");
 			visPauseMenu.SetActive (true);
@@ -65,6 +67,23 @@ public class ImmortalObjectScript : MonoBehaviour {
 		}
 	}
 
+
+	void FixedUpdate(){
+		if (spawn) {
+			count++;
+			if (count > 200) {
+				RespawnScript a = GameObject.Find ("RespawnObject").GetComponent<RespawnScript> ();
+
+				for (int i = 0; i < 4 ; i++) {
+					if (players [i]) {
+						Debug.Log ("adding player: " + i);
+						a.InitialSpawn (i);
+					}
+				}
+				spawn = false;
+			}
+		}
+	}
 	//this update function is temporaty for the pause menu
 	void Update () {
 		time = Time.realtimeSinceStartup;
@@ -73,7 +92,7 @@ public class ImmortalObjectScript : MonoBehaviour {
 			for(int i = 0; i < 4; i ++){
 				state = GamePad.GetState ((PlayerIndex)i, GamePadDeadZone.None);
 				if (state.Buttons.Start == ButtonState.Pressed)
-					pauseGame (0);
+					pauseGame (i);
 			}
 
 			temp = time;

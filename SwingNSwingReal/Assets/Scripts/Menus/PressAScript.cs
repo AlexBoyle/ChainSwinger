@@ -2,17 +2,21 @@
 using System.Collections;
 using XInputDotNetPure; 
 public class PressAScript : MonoBehaviour {
-	public int playerNumber;
+	private int playerNumber;
 	private PlayerIndex playerIndex;
-
+	public Sprite sp1;
+	public Sprite sp2;
+	public Sprite sp3;
 	private GamePadState state;
 	private GamePadState pre;
 	private JoinGameCam cam;
 	private bool playerjoin = false;
 	private bool playerReady = false;
 	private bool pressedB = false;
+	private RespawnScript a;
 	// Use this for initialization
 	void Start () {
+		// a = GameObject.Find ("RespawnObject").GetComponent<RespawnScript> ();
 		playerIndex = (PlayerIndex)playerNumber;
 		cam = GameObject.Find ("Main Camera").GetComponent<JoinGameCam> ();
 	}
@@ -22,13 +26,16 @@ public class PressAScript : MonoBehaviour {
 		state = GamePad.GetState (playerIndex, GamePadDeadZone.None);
 		if (state.Buttons.A == ButtonState.Pressed && !playerjoin) {
 			gameObject.GetComponent<SpriteRenderer> ().color = Color.yellow;
+			gameObject.GetComponent<SpriteRenderer> ().sprite = sp2;
 			cam.playerJoin ();
 			playerjoin = true;
 		}
 		if (playerjoin && state.Buttons.Start == ButtonState.Pressed && !playerReady) {
 			gameObject.GetComponent<SpriteRenderer> ().color = Color.green;
-			cam.playerReady ();
+			gameObject.GetComponent<SpriteRenderer> ().sprite = sp3;
+			cam.playerReady (playerNumber);
 			playerReady = true;
+			//a.InitialSpawn (playerNumber);
 		}
 		if (state.Buttons.B == ButtonState.Released) {
 			pressedB = false;
@@ -38,11 +45,13 @@ public class PressAScript : MonoBehaviour {
 				pressedB = true;
 				if (playerReady) {
 					playerReady = false;
-					cam.playerNotReady ();
+					cam.playerNotReady (playerNumber);
+					gameObject.GetComponent<SpriteRenderer> ().sprite = sp2;
 					gameObject.GetComponent<SpriteRenderer> ().color = Color.yellow;
 				} else if (playerjoin) {
 					playerjoin = false;
 					cam.playerLeave ();
+					gameObject.GetComponent<SpriteRenderer> ().sprite = sp1;
 					gameObject.GetComponent<SpriteRenderer> ().color = Color.white;
 				}
 			}

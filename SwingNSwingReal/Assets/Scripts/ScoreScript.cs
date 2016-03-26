@@ -23,6 +23,7 @@ public class ScoreScript : MonoBehaviour {
 	
 	}
 	public void AddPlayer(GameObject newPlayer){
+		Debug.Log ("newplayyer");
 		Players[nextPlayer] = newPlayer;
 		nextPlayer++;
 	}

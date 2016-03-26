@@ -9,7 +9,7 @@ public class Maps : MonoBehaviour {
 	private int[] mapVotes;
 	public int rows = 2;
 	public GameObject[] mapImages;
-	public int numPlayers = 4;
+	public int numPlayers = 0;
 	public int votes = 0;
 	private int width;
 	private int height;
@@ -33,10 +33,28 @@ public class Maps : MonoBehaviour {
 			Instantiate(mapImages[i],new Vector3(((i%width) * disX)-6, (j * -disY) +3, 0),Quaternion.identity);
 		}
 	}
-	public void addPlayers(int a){
-		numPlayers = a;
-		for (int i = 0; i < numPlayers; i++) {
-			(Instantiate (player) as GameObject).GetComponent<MapSelector> ().setPlayerNum (i);
+	public void addPlayers(bool[] a){
+		
+		for (int i = 0; i < 4; i++) {
+			if (a [i]) {
+				GameObject temp = (Instantiate (player) as GameObject);
+				temp.GetComponent<MapSelector> ().setPlayerNum (i);
+				switch (i) {
+				case 0:
+					temp.GetComponent<SpriteRenderer> ().color = Color.red;
+					break;
+				case 1:
+					temp.GetComponent<SpriteRenderer> ().color = Color.blue;
+					break;
+				case 2:
+					temp.GetComponent<SpriteRenderer> ().color = Color.yellow;
+					break;
+				case 3:
+					temp.GetComponent<SpriteRenderer> ().color = Color.green;
+					break;
+				}
+				numPlayers++;
+			}
 		}
 	}
 	//collects map voats and then picks the next level
@@ -62,7 +80,7 @@ public class Maps : MonoBehaviour {
 				}
 			}
 			for(int i = 0; i < mapToPlay.Count; i ++)
-			Debug.Log (mapToPlay[i]);
+			//Debug.Log (mapToPlay[i]);
 			//pick level
 			Random.seed = System.DateTime.Now.Millisecond;
 			int temp = mapToPlay [(int)(Random.value * 100) % mapToPlay.Count] + SceneManager.GetActiveScene ().buildIndex +1;
