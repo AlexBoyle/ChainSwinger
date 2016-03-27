@@ -7,6 +7,7 @@ public class ImmortalObjectScript : MonoBehaviour {
 	private float time;
 	private float temp;
 	private GamePadState state;
+	private GamePadState prestate;
 	/// ////
 	/// 
 	/// 
@@ -53,7 +54,7 @@ public class ImmortalObjectScript : MonoBehaviour {
 	public void pauseGame(int player){
 		if(curlvl > BuildIndex)	
 		if (!isPaused) {
-			Debug.Log ("here");
+			//Debug.Log ("here");
 			visPauseMenu.SetActive (true);
 			visPauseMenu.GetComponent<PauseMenu> ().setPlayer (player);
 			isPaused = true;
@@ -69,6 +70,14 @@ public class ImmortalObjectScript : MonoBehaviour {
 
 
 	void FixedUpdate(){
+		//put this in an update loop to prevent forver pausing
+		for(int i = 0; i < 4; i ++){
+			state = GamePad.GetState ((PlayerIndex)i, GamePadDeadZone.None);
+			if (state.Buttons.Start == ButtonState.Pressed && prestate.Buttons.Start == ButtonState.Released && !isPaused) {
+				prestate = state;
+				pauseGame (i);
+			}
+		}
 		if (spawn) {
 			count++;
 			if (count > 200) {
@@ -83,20 +92,9 @@ public class ImmortalObjectScript : MonoBehaviour {
 				spawn = false;
 			}
 		}
+		prestate = state;
 	}
-	//this update function is temporaty for the pause menu
-	void Update () {
-		time = Time.realtimeSinceStartup;
-		if (temp + .1f < time ) {
-			//Debug.Log (time);
-			for(int i = 0; i < 4; i ++){
-				state = GamePad.GetState ((PlayerIndex)i, GamePadDeadZone.None);
-				if (state.Buttons.Start == ButtonState.Pressed)
-					pauseGame (i);
-			}
 
-			temp = time;
-		}
 
 }
-}
+
