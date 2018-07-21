@@ -42,8 +42,8 @@ public class RespawnScript : MonoBehaviour {
 	}
 
 	IEnumerator DelayRespawn(float delay, int playerNum){
-		GameObject ghost = players [playerNum].transform.FindChild ("Ghost").gameObject;
-		GameObject player = players [playerNum].transform.FindChild ("Player").gameObject;
+		GameObject ghost = players [playerNum].transform.Find ("Ghost").gameObject;
+		GameObject player = players [playerNum].transform.Find ("Player").gameObject;
 		SPS.PlayDeath ();
 		ghost.transform.position = player.transform.position;
 		ghost.SetActive(true);
@@ -68,7 +68,7 @@ public class RespawnScript : MonoBehaviour {
 			tmp.GetComponentInChildren<PlayerControlScript> ().SetColor (Color.red);
 			tcolor = Color.red;
 			tcolor.a = .5f;
-			players [playerNumber].transform.FindChild ("Ghost").gameObject.GetComponent<SpriteRenderer> ().color = tcolor;
+			players [playerNumber].transform.Find ("Ghost").gameObject.GetComponent<SpriteRenderer> ().color = tcolor;
 			break;
 		case 1:
 			tmp.transform.position = new Vector3 (4, 0, 0);
@@ -76,7 +76,7 @@ public class RespawnScript : MonoBehaviour {
 			tmp.GetComponentInChildren<PlayerControlScript> ().SetColor (Color.blue);
 			tcolor = Color.blue;
 			tcolor.a = .5f;
-			players [playerNumber].transform.FindChild ("Ghost").gameObject.GetComponent<SpriteRenderer> ().color = tcolor;
+			players [playerNumber].transform.Find ("Ghost").gameObject.GetComponent<SpriteRenderer> ().color = tcolor;
 			break;
 		case 2:
 			tmp.transform.position = new Vector3 (-8, 0, 0);
@@ -84,7 +84,7 @@ public class RespawnScript : MonoBehaviour {
 			tmp.GetComponentInChildren<PlayerControlScript> ().SetColor (Color.yellow);
 			tcolor = Color.yellow;
 			tcolor.a = .5f;
-			players [playerNumber].transform.FindChild ("Ghost").gameObject.GetComponent<SpriteRenderer> ().color = tcolor;
+			players [playerNumber].transform.Find ("Ghost").gameObject.GetComponent<SpriteRenderer> ().color = tcolor;
 			break;
 		case 3:
 			tmp.transform.position = new Vector3 (8, 0, 0);
@@ -92,12 +92,12 @@ public class RespawnScript : MonoBehaviour {
 			tmp.GetComponentInChildren<PlayerControlScript> ().SetColor (Color.green);
 			tcolor = Color.green;
 			tcolor.a = .5f;
-			players [playerNumber].transform.FindChild ("Ghost").GetComponent<SpriteRenderer> ().color = tcolor;
+			players [playerNumber].transform.Find ("Ghost").GetComponent<SpriteRenderer> ().color = tcolor;
 			break;
 		}
 
 
-		CFS.addPlayer (tmp.transform.GetChild(0).transform, players [playerNumber].gameObject.transform.FindChild ("Ghost").gameObject.transform, playerNumber);
+		CFS.addPlayer (tmp.transform.GetChild(0).transform, players [playerNumber].gameObject.transform.Find ("Ghost").gameObject.transform, playerNumber);
 		tmp.GetComponentInChildren<HealthScript> ().DealDamage (100, -2, false);
 
 	}
